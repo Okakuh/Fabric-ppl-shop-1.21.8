@@ -12,12 +12,18 @@ import net.minecraft.block.entity.BlockEntity;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
 public class ClientMod implements ClientModInitializer {
 
     // ==================== НАСТРАИВАЕМЫЕ ПЕРЕМЕННЫЕ ====================
+
+    // Паттерны для парсинга цен и количества
+    public static final String PRICE_PATTERN = "\\d+\\s*а[а-яё]{1}";
+    public static final String AMOUNT_PATTERN = "\\d+\\s*[а-яё]{2}";
 
     // Параметры по умолчанию для команды /shop
     public static final int DEFAULT_STACK_SIZE = 64;
@@ -117,6 +123,22 @@ public class ClientMod implements ClientModInitializer {
 
         // Выводим количество найденных табличек
         source.sendFeedback(Text.literal("§6Найдено табличек: §e" + foundSigns.size()));
+
+        // Сортируем и группируем по цене
+        World world = source.getWorld();
+        Map<Double, List<BlockPos>> sortedSigns = sortAndGroupSignsByPrice(foundSigns, stack, world);
+
+        // Выводим длину сгруппированного списка
+        source.sendFeedback(Text.literal("§6Количество групп по цене: §e" + sortedSigns.size()));
+
+        // Выводим отсортированный список
+        source.sendFeedback(Text.literal("§6=== Отсортировано по цене ==="));
+        for (Map.Entry<Double, List<BlockPos>> entry : sortedSigns.entrySet()) {
+            double price = entry.getKey();
+            List<BlockPos> signs = entry.getValue();
+            String priceText = price == -1 ? "Бесплатно" : String.valueOf(price);
+            source.sendFeedback(Text.literal("§aЦена: §e" + priceText + "§a - Количество: §f" + signs.size()));
+        }
 
         return 1;
     }
@@ -232,5 +254,172 @@ public class ClientMod implements ClientModInitializer {
         }
 
         return true;
+    }
+
+    // Новый класс для хранения информации о табличке с ценой
+    private static class SignPriceInfo {
+        public BlockPos position;
+        public double pricePerUnit;
+        public int originalPrice;
+        public int amount;
+
+        public SignPriceInfo(BlockPos position, double pricePerUnit, int originalPrice, int amount) {
+            this.position = position;
+            this.pricePerUnit = pricePerUnit;
+            this.originalPrice = originalPrice;
+            this.amount = amount;
+        }
+    }
+
+    // Функция для парсинга цены за единицу
+    private static double parsePricePerUnit(SignBlockEntity sign, int stackAmount) {
+        String[] lines = getFrontTextArray(sign);
+        String allLinesLower = String.join(" ", lines).toLowerCase();
+
+        double resultPrice = 9999;
+        int resultAmount = 1;
+
+        if (allLinesLower.contains("бесплат")) {
+            resultPrice = -1;
+        } else {
+            List<String> foundPricesPatterns = regexFindAll(allLinesLower, PRICE_PATTERN);
+            int countPrices = foundPricesPatterns.size();
+
+            if (countPrices == 1) {
+                String foundPriceStr = foundPricesPatterns.get(0);
+                int price = parsePrice(foundPriceStr);
+                resultPrice = price;
+
+                String textWithoutPrice = allLinesLower.replace(foundPriceStr, "");
+                List<String> foundAmountPatterns = regexFindAll(textWithoutPrice, AMOUNT_PATTERN);
+
+                if (!foundAmountPatterns.isEmpty()) {
+                    int amount = parseAmount(foundAmountPatterns.get(0), stackAmount);
+                    resultAmount = amount;
+                }
+
+            } else if (countPrices == 2) {
+                double lastPricePerUnit = 0;
+                for (String line : lines) {
+                    List<String> linePricePatterns = regexFindAll(line.toLowerCase(), PRICE_PATTERN);
+
+                    if (!linePricePatterns.isEmpty()) {
+                        String foundPriceStr = linePricePatterns.get(0);
+                        int price = parsePrice(foundPriceStr);
+                        resultPrice = price;
+
+                        String textWithoutPrice = allLinesLower.replace(foundPriceStr, "");
+                        List<String> foundAmountPatterns = regexFindAll(textWithoutPrice, AMOUNT_PATTERN);
+
+                        if (!foundAmountPatterns.isEmpty()) {
+                            int amount = parseAmount(foundAmountPatterns.get(0), stackAmount);
+                            resultAmount = amount;
+
+                            double calculatedPricePerUnit = (double) price / amount;
+
+                            if (lastPricePerUnit == 0) {
+                                lastPricePerUnit = calculatedPricePerUnit;
+                                resultPrice = price;
+                                resultAmount = amount;
+                            } else if (calculatedPricePerUnit < lastPricePerUnit) {
+                                resultPrice = price;
+                                resultAmount = amount;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (resultAmount == 0) {
+            resultAmount = 1;
+        }
+        return (double) resultPrice / resultAmount;
+    }
+
+    // Вспомогательный метод для получения текста таблички как массива
+    private static String[] getFrontTextArray(SignBlockEntity sign) {
+        String[] text = new String[4];
+        for (int i = 0; i < 4; i++) {
+            Text line = sign.getText(SEARCH_FRONT_SIDE).getMessage(i, false);
+            text[i] = line.getString().trim();
+        }
+        return text;
+    }
+
+    // Поиск всех совпадений по регулярному выражению
+    private static List<String> regexFindAll(String text, String patternStr) {
+        List<String> matches = new ArrayList<>();
+        try {
+            Pattern pattern = Pattern.compile(patternStr);
+            Matcher matcher = pattern.matcher(text);
+            while (matcher.find()) {
+                matches.add(matcher.group());
+            }
+        } catch (Exception e) {
+            // Игнорируем ошибки regex
+        }
+        return matches;
+    }
+
+    // Парсинг цены
+    private static int parsePrice(String text) {
+        String digits = text.replaceAll("\\D", "");
+        int price = digits.isEmpty() ? 0 : Integer.parseInt(digits);
+        String modifierWord = text.replace(digits, "").replace(" ", "").toLowerCase();
+
+        if (modifierWord.startsWith("аб")) {
+            price = price * 9;
+        }
+        return price;
+    }
+
+    // Парсинг количества
+    private static int parseAmount(String amountText, int stackAmount) {
+        String digits = amountText.replaceAll("\\D", "");
+        int amount = digits.isEmpty() ? 1 : Integer.parseInt(digits);
+        String modifierWord = amountText.replace(digits, "").replace(" ", "").toLowerCase();
+
+        if (modifierWord.startsWith("ст")) {
+            amount *= stackAmount;
+        } else if (modifierWord.startsWith("ша")) {
+            amount *= 27 * stackAmount;
+        } else if (modifierWord.startsWith("м")) {
+            amount *= stackAmount;
+        } else if (modifierWord.startsWith("сло")) {
+            if (amount == 1) {
+                amount = (int) Math.ceil(stackAmount / 4.0);
+            } else {
+                amount *= stackAmount;
+            }
+        }
+        return amount;
+    }
+
+    // Функция для сортировки и группировки табличек по цене
+    private static Map<Double, List<BlockPos>> sortAndGroupSignsByPrice(List<BlockPos> foundSigns, int stackAmount, World world) {
+        List<SignPriceInfo> signPriceInfos = new ArrayList<>();
+
+        // Парсим цены для всех найденных табличек
+        for (BlockPos pos : foundSigns) {
+            BlockEntity blockEntity = world.getBlockEntity(pos);
+            if (blockEntity instanceof SignBlockEntity sign) {
+                double pricePerUnit = parsePricePerUnit(sign, stackAmount);
+                if (pricePerUnit != 9999) { // Игнорируем таблички без цены
+                    signPriceInfos.add(new SignPriceInfo(pos, pricePerUnit, (int)pricePerUnit, 1));
+                }
+            }
+        }
+
+        // Сортируем по цене за единицу (от самой дешевой к самой дорогой)
+        signPriceInfos.sort((a, b) -> Double.compare(a.pricePerUnit, b.pricePerUnit));
+
+        // Группируем по одинаковым ценам (без округления)
+        Map<Double, List<BlockPos>> groupedSigns = new LinkedHashMap<>();
+        for (SignPriceInfo info : signPriceInfos) {
+            groupedSigns.computeIfAbsent(info.pricePerUnit, k -> new ArrayList<>()).add(info.position);
+        }
+
+        return groupedSigns;
     }
 }
