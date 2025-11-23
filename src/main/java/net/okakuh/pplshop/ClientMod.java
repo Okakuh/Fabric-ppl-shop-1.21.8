@@ -131,13 +131,11 @@ public class ClientMod implements ClientModInitializer {
         // Выводим длину сгруппированного списка
         source.sendFeedback(Text.literal("§6Количество групп по цене: §e" + sortedSigns.size()));
 
-        // Выводим отсортированный список
-        source.sendFeedback(Text.literal("§6=== Отсортировано по цене ==="));
+        // Выводим отсортированный список с форматированными сообщениями
         for (Map.Entry<Double, List<BlockPos>> entry : sortedSigns.entrySet()) {
             double price = entry.getKey();
-            List<BlockPos> signs = entry.getValue();
-            String priceText = price == -1 ? "Бесплатно" : String.valueOf(price);
-            source.sendFeedback(Text.literal("§aЦена: §e" + priceText + "§a - Количество: §f" + signs.size()));
+            String message = parseMessage(price, stack);
+            source.sendFeedback(Text.literal("§a" + message));
         }
 
         return 1;
@@ -421,5 +419,64 @@ public class ClientMod implements ClientModInitializer {
         }
 
         return groupedSigns;
+    }
+
+    // Функция для форматирования сообщения о цене
+    private static String parseMessage(double price, int stackAmount) {
+        StringBuilder message = new StringBuilder("Ценовая категория: ");
+
+        if (price == -1) {
+            message.append("БЕСПЛАТНО!!!");
+        } else {
+            double amount = 1;
+            if (price < 1 && price != -1) {
+                amount = 1 / price;
+                price = 1;
+            }
+
+            int priceInt = (int) price;
+            message.append(priceInt).append("алм.");
+
+            int ab = (int) Math.floor(priceInt / 9.0);
+            if (ab >= 2) {
+                message.append("(");
+                message.append(ab).append("АБ.");
+                priceInt -= ab * 9;
+                if (priceInt > 0) {
+                    message.append("+").append(priceInt);
+                }
+                message.append(")");
+            }
+            message.append("-");
+
+            int amountInt = (int) amount;
+            int stacks = (int) Math.floor(amountInt / (double) stackAmount);
+            int shulkers = (int) Math.floor(amountInt / (double) (stackAmount * 27));
+
+            if (shulkers > 0) {
+                amountInt -= shulkers * 27 * stackAmount;
+                stacks = (int) Math.floor(amountInt / (double) stackAmount);
+            }
+
+            if (stackAmount == 1) stacks = 0;
+            if (stacks > 0) amountInt -= stacks * stackAmount;
+
+            boolean f = false;
+            if (shulkers >= 1) {
+                message.append(shulkers).append("шалк.");
+                f = true;
+            }
+            if (stacks >= 1) {
+                if (f) message.append("+");
+                message.append(stacks).append("ст.");
+                f = true;
+            }
+            if (amountInt >= 1) {
+                if (f) message.append("+");
+                message.append(amountInt).append("шт.");
+            }
+        }
+
+        return message.toString();
     }
 }
