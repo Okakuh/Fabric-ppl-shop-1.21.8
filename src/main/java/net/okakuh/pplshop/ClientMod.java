@@ -33,7 +33,7 @@ public class ClientMod implements ClientModInitializer {
     // Ограничения параметров
     public static final int MIN_STACK_SIZE = 1;
     public static final int MAX_STACK_SIZE = 64;
-    public static final int MIN_RADIUS = 0;
+    public static final int MIN_RADIUS = 1;
 
     // ==================== КОНЕЦ НАСТРАИВАЕМЫХ ПЕРЕМЕННЫХ ====================
 
