@@ -1,0 +1,40 @@
+{
+	"schemaVersion": 1,
+	"id": "ppl-shop",
+	"version": "${version}",
+	"name": "PPL Shop",
+	"description": "Find lowest prices in Pepeland TZ world",
+	"authors": [
+		"Okakuh"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "None",
+	"icon": "assets/ppl-shop/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.okakuh.pplshop.PPLShop"
+		],
+		"fabric-datagen": [
+			"net.okakuh.pplshop.PPLShopDataGenerator"
+		],
+        "client": [
+            "net.okakuh.pplshop.PPLShopClient"
+        ]
+	},
+	"mixins": [
+		"ppl-shop.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.18.1",
+		"minecraft": "~1.21.8",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
