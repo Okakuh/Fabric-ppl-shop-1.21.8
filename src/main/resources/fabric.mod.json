@@ -1,40 +1,30 @@
 {
-	"schemaVersion": 1,
-	"id": "ppl-shop",
-	"version": "${version}",
-	"name": "PPL Shop",
-	"description": "Find lowest prices in Pepeland TZ world",
-	"authors": [
-		"Okakuh"
-	],
-	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
-	},
-	"license": "None",
-	"icon": "assets/ppl-shop/icon.png",
-	"environment": "*",
-	"entrypoints": {
-		"main": [
-			"net.okakuh.pplshop.PPLShop"
-		],
-		"fabric-datagen": [
-			"net.okakuh.pplshop.PPLShopDataGenerator"
-		],
-        "client": [
-            "net.okakuh.pplshop.PPLShopClient"
-        ]
-	},
-	"mixins": [
-		"ppl-shop.mixins.json"
-	],
-	"depends": {
-		"fabricloader": ">=0.18.1",
-		"minecraft": "~1.21.8",
-		"java": ">=21",
-		"fabric-api": "*"
-	},
-	"suggests": {
-		"another-mod": "*"
-	}
+  "schemaVersion": 1,
+  "id": "ppl-shop",
+  "version": "1.0.0",
+  "name": "PPL Shop",
+  "description": "Shop mod with custom client commands",
+  "authors": ["YourName"],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/ppl-shop/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "net.okakuh.pplshop.PPLShop"
+    ],
+    "client": [
+      "net.okakuh.pplshop.ClientMod"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": "~1.21",
+    "java": ">=21",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "modmenu": "*",
+    "cloth-config": "*"
+  }
 }
