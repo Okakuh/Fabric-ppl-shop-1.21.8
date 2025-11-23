@@ -2,6 +2,7 @@ package net.okakuh.pplshop;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.text.Text;
@@ -9,6 +10,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.client.util.InputUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,10 +22,6 @@ import java.util.regex.Matcher;
 public class ClientMod implements ClientModInitializer {
 
     // ==================== НАСТРАИВАЕМЫЕ ПЕРЕМЕННЫЕ ====================
-
-    // Паттерны для парсинга цен и количества
-    public static final String PRICE_PATTERN = "\\d+\\s*а[а-яё]{1}";
-    public static final String AMOUNT_PATTERN = "\\d+\\s*[а-яё]{2}";
 
     // Параметры по умолчанию для команды /shop
     public static final int DEFAULT_STACK_SIZE = 64;
@@ -39,7 +37,22 @@ public class ClientMod implements ClientModInitializer {
     // Ограничения параметров
     public static final int MIN_STACK_SIZE = 1;
     public static final int MAX_STACK_SIZE = 64;
-    public static final int MIN_RADIUS = 1;
+    public static final int MIN_RADIUS = 0;
+
+    // Паттерны для парсинга цен и количества
+    public static final String PRICE_PATTERN = "\\d+\\s*а[а-яё]{1}";
+    public static final String AMOUNT_PATTERN = "\\d+\\s*[а-яё]{2}";
+
+    // ==================== СИСТЕМА НАВИГАЦИИ ====================
+    private static Map<Double, List<BlockPos>> currentSortedSigns = null;
+    private static List<Double> currentPriceKeys = null;
+    private static int currentGroupIndex = -1;
+    private static boolean navigationActive = false;
+
+    // Флаги для защиты от множественных нажатий
+    private static boolean wasUpPressed = false;
+    private static boolean wasDownPressed = false;
+    private static boolean wasBackspacePressed = false;
 
     // ==================== КОНЕЦ НАСТРАИВАЕМЫХ ПЕРЕМЕННЫХ ====================
 
@@ -104,6 +117,98 @@ public class ClientMod implements ClientModInitializer {
                             )
             );
         });
+
+        // Обработчик тиков для навигации
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.player == null || client.currentScreen != null) return;
+            handleKeyNavigation(client);
+        });
+    }
+
+    private static void handleKeyNavigation(net.minecraft.client.MinecraftClient client) {
+        if (!navigationActive) return;
+
+        long window = client.getWindow().getHandle();
+
+        // Стрелка ВНИЗ - следующая группа
+        if (InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_DOWN) && !wasDownPressed) {
+            wasDownPressed = true;
+            nextGroup();
+            client.player.sendMessage(Text.literal("§6➡ Переход к следующей группе"), false);
+        } else if (!InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_DOWN)) {
+            wasDownPressed = false;
+        }
+
+        // Стрелка ВВЕРХ - предыдущая группа
+        if (InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_UP) && !wasUpPressed) {
+            wasUpPressed = true;
+            previousGroup();
+            client.player.sendMessage(Text.literal("§6⬅ Переход к предыдущей группе"), false);
+        } else if (!InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_UP)) {
+            wasUpPressed = false;
+        }
+
+        // Backspace - завершить навигацию
+        if (InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_BACKSPACE) && !wasBackspacePressed) {
+            wasBackspacePressed = true;
+            stopNavigation();
+            client.player.sendMessage(Text.literal("§c✗ Навигация завершена"), false);
+        } else if (!InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_BACKSPACE)) {
+            wasBackspacePressed = false;
+        }
+    }
+
+    // Метод для начала навигации
+    private static void startNavigation(Map<Double, List<BlockPos>> sortedSigns) {
+        currentSortedSigns = sortedSigns;
+        currentPriceKeys = new ArrayList<>(sortedSigns.keySet());
+        currentGroupIndex = 0;
+        navigationActive = true;
+        highlightCurrentGroup();
+    }
+
+    // Метод для подсветки текущей группы
+    private static void highlightCurrentGroup() {
+        if (!navigationActive || currentGroupIndex < 0 || currentGroupIndex >= currentPriceKeys.size()) {
+            return;
+        }
+
+        Double currentPrice = currentPriceKeys.get(currentGroupIndex);
+        List<BlockPos> currentGroup = currentSortedSigns.get(currentPrice);
+
+        // Здесь можно добавить визуальное выделение табличек
+        System.out.println("Highlighting group " + currentGroupIndex + " with price " + currentPrice + ", signs: " + currentGroup.size());
+    }
+
+    // Метод для перехода к следующей группе
+    private static void nextGroup() {
+        if (!navigationActive || currentPriceKeys == null) return;
+
+        if (currentGroupIndex < currentPriceKeys.size() - 1) {
+            currentGroupIndex++;
+            highlightCurrentGroup();
+        }
+    }
+
+    // Метод для перехода к предыдущей группе
+    private static void previousGroup() {
+        if (!navigationActive || currentPriceKeys == null) return;
+
+        if (currentGroupIndex > 0) {
+            currentGroupIndex--;
+            highlightCurrentGroup();
+        }
+    }
+
+    // Метод для завершения навигации
+    private static void stopNavigation() {
+        navigationActive = false;
+        currentSortedSigns = null;
+        currentPriceKeys = null;
+        currentGroupIndex = -1;
+
+        // Здесь можно убрать визуальное выделение
+        System.out.println("Navigation stopped");
     }
 
     private static int executeShop(com.mojang.brigadier.context.CommandContext<net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource> context, String pattern, int stack, int radius, boolean useRegex) {
@@ -136,6 +241,22 @@ public class ClientMod implements ClientModInitializer {
             double price = entry.getKey();
             String message = parseMessage(price, stack);
             source.sendFeedback(Text.literal("§a" + message));
+        }
+
+        // Запускаем навигацию
+        if (!sortedSigns.isEmpty()) {
+            startNavigation(sortedSigns);
+            source.sendFeedback(Text.literal(""));
+            source.sendFeedback(Text.literal("§6=== НАВИГАЦИЯ ==="));
+            source.sendFeedback(Text.literal("§e⬆ Стрелка ВВЕРХ §7- предыдущая группа"));
+            source.sendFeedback(Text.literal("§e⬇ Стрелка ВНИЗ §7- следующая группа"));
+            source.sendFeedback(Text.literal("§cBackspace §7- завершить навигацию"));
+            source.sendFeedback(Text.literal("§6=================="));
+
+            // Сбрасываем флаги нажатий
+            wasUpPressed = false;
+            wasDownPressed = false;
+            wasBackspacePressed = false;
         }
 
         return 1;
@@ -269,6 +390,37 @@ public class ClientMod implements ClientModInitializer {
         }
     }
 
+    // Функция для сортировки и группировки табличек по цене
+    private static Map<Double, List<BlockPos>> sortAndGroupSignsByPrice(List<BlockPos> foundSigns, int stackAmount, World world) {
+        List<SignPriceInfo> signPriceInfos = new ArrayList<>();
+
+        // Парсим цены для всех найденных табличек
+        for (BlockPos pos : foundSigns) {
+            BlockEntity blockEntity = world.getBlockEntity(pos);
+            if (blockEntity instanceof SignBlockEntity sign) {
+                double pricePerUnit = parsePricePerUnit(sign, stackAmount);
+                if (pricePerUnit != 9999) { // Игнорируем таблички без цены
+                    signPriceInfos.add(new SignPriceInfo(pos, pricePerUnit, (int)pricePerUnit, 1));
+                }
+            }
+        }
+
+        // Сортируем по цене за единицу (от самой дешевой к самой дорогой)
+        signPriceInfos.sort((a, b) -> Double.compare(a.pricePerUnit, b.pricePerUnit));
+
+        // Группируем по одинаковым ценам (без округления)
+        Map<Double, List<BlockPos>> groupedSigns = new LinkedHashMap<>();
+        for (SignPriceInfo info : signPriceInfos) {
+            Double price = info.pricePerUnit;
+            if (!groupedSigns.containsKey(price)) {
+                groupedSigns.put(price, new ArrayList<>());
+            }
+            groupedSigns.get(price).add(info.position);
+        }
+
+        return groupedSigns;
+    }
+
     // Функция для парсинга цены за единицу
     private static double parsePricePerUnit(SignBlockEntity sign, int stackAmount) {
         String[] lines = getFrontTextArray(sign);
@@ -392,33 +544,6 @@ public class ClientMod implements ClientModInitializer {
             }
         }
         return amount;
-    }
-
-    // Функция для сортировки и группировки табличек по цене
-    private static Map<Double, List<BlockPos>> sortAndGroupSignsByPrice(List<BlockPos> foundSigns, int stackAmount, World world) {
-        List<SignPriceInfo> signPriceInfos = new ArrayList<>();
-
-        // Парсим цены для всех найденных табличек
-        for (BlockPos pos : foundSigns) {
-            BlockEntity blockEntity = world.getBlockEntity(pos);
-            if (blockEntity instanceof SignBlockEntity sign) {
-                double pricePerUnit = parsePricePerUnit(sign, stackAmount);
-                if (pricePerUnit != 9999) { // Игнорируем таблички без цены
-                    signPriceInfos.add(new SignPriceInfo(pos, pricePerUnit, (int)pricePerUnit, 1));
-                }
-            }
-        }
-
-        // Сортируем по цене за единицу (от самой дешевой к самой дорогой)
-        signPriceInfos.sort((a, b) -> Double.compare(a.pricePerUnit, b.pricePerUnit));
-
-        // Группируем по одинаковым ценам (без округления)
-        Map<Double, List<BlockPos>> groupedSigns = new LinkedHashMap<>();
-        for (SignPriceInfo info : signPriceInfos) {
-            groupedSigns.computeIfAbsent(info.pricePerUnit, k -> new ArrayList<>()).add(info.position);
-        }
-
-        return groupedSigns;
     }
 
     // Функция для форматирования сообщения о цене
