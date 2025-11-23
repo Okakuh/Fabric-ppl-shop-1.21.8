@@ -12,12 +12,15 @@ import net.minecraft.block.entity.BlockEntity;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 public class ClientMod implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+            // Команда /shop для обычного поиска
             dispatcher.register(
                     net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("shop")
                             .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("search_pattern", StringArgumentType.string())
@@ -25,21 +28,50 @@ public class ClientMod implements ClientModInitializer {
                                         String searchPattern = StringArgumentType.getString(context, "search_pattern");
                                         int stack = 64;
                                         int radius = 30;
-                                        return executeShop(context, searchPattern, stack, radius);
+                                        return executeShop(context, searchPattern, stack, radius, false);
                                     })
                                     .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("stack", IntegerArgumentType.integer(1, 64))
                                             .executes(context -> {
                                                 String searchPattern = StringArgumentType.getString(context, "search_pattern");
                                                 int stack = IntegerArgumentType.getInteger(context, "stack");
                                                 int radius = 30;
-                                                return executeShop(context, searchPattern, stack, radius);
+                                                return executeShop(context, searchPattern, stack, radius, false);
                                             })
                                             .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("radius", IntegerArgumentType.integer(0))
                                                     .executes(context -> {
                                                         String searchPattern = StringArgumentType.getString(context, "search_pattern");
                                                         int stack = IntegerArgumentType.getInteger(context, "stack");
                                                         int radius = IntegerArgumentType.getInteger(context, "radius");
-                                                        return executeShop(context, searchPattern, stack, radius);
+                                                        return executeShop(context, searchPattern, stack, radius, false);
+                                                    })
+                                            )
+                                    )
+                            )
+            );
+
+            // Команда /shopr для поиска по регулярным выражениям
+            dispatcher.register(
+                    net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("shopr")
+                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("regex_pattern", StringArgumentType.string())
+                                    .executes(context -> {
+                                        String regexPattern = StringArgumentType.getString(context, "regex_pattern");
+                                        int stack = 64;
+                                        int radius = 30;
+                                        return executeShop(context, regexPattern, stack, radius, true);
+                                    })
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("stack", IntegerArgumentType.integer(1, 64))
+                                            .executes(context -> {
+                                                String regexPattern = StringArgumentType.getString(context, "regex_pattern");
+                                                int stack = IntegerArgumentType.getInteger(context, "stack");
+                                                int radius = 30;
+                                                return executeShop(context, regexPattern, stack, radius, true);
+                                            })
+                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("radius", IntegerArgumentType.integer(0))
+                                                    .executes(context -> {
+                                                        String regexPattern = StringArgumentType.getString(context, "regex_pattern");
+                                                        int stack = IntegerArgumentType.getInteger(context, "stack");
+                                                        int radius = IntegerArgumentType.getInteger(context, "radius");
+                                                        return executeShop(context, regexPattern, stack, radius, true);
                                                     })
                                             )
                                     )
@@ -48,16 +80,20 @@ public class ClientMod implements ClientModInitializer {
         });
     }
 
-    private static int executeShop(com.mojang.brigadier.context.CommandContext<net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource> context, String searchPattern, int stack, int radius) {
+    private static int executeShop(com.mojang.brigadier.context.CommandContext<net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource> context, String pattern, int stack, int radius, boolean useRegex) {
         var source = context.getSource();
 
         // Выводим параметры команды
-        source.sendFeedback(Text.literal("§aSearch Pattern: §f" + searchPattern));
+        if (useRegex) {
+            source.sendFeedback(Text.literal("§aRegex Pattern: §f" + pattern));
+        } else {
+            source.sendFeedback(Text.literal("§aSearch Pattern: §f" + pattern));
+        }
         source.sendFeedback(Text.literal("§aStack: §f" + stack));
         source.sendFeedback(Text.literal("§aRadius: §f" + radius));
 
         // Ищем таблички вокруг игрока
-        List<BlockPos> foundSigns = findSignsAroundPlayer(source, radius, searchPattern);
+        List<BlockPos> foundSigns = findSignsAroundPlayer(source, radius, pattern, useRegex);
 
         // Выводим количество найденных табличек
         source.sendFeedback(Text.literal("§6Найдено табличек: §e" + foundSigns.size()));
@@ -65,7 +101,7 @@ public class ClientMod implements ClientModInitializer {
         return 1;
     }
 
-    private static List<BlockPos> findSignsAroundPlayer(net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource source, int radius, String searchPattern) {
+    private static List<BlockPos> findSignsAroundPlayer(net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource source, int radius, String pattern, boolean useRegex) {
         List<BlockPos> foundSigns = new ArrayList<>();
 
         // Получаем мир и позицию игрока
@@ -91,7 +127,7 @@ public class ClientMod implements ClientModInitializer {
 
                     // Проверяем, является ли блок табличкой и соответствует ли поиску
                     if (blockEntity instanceof SignBlockEntity sign) {
-                        if (signMatchesSearch(sign, searchPattern)) {
+                        if (signMatchesSearch(sign, pattern, useRegex)) {
                             foundSigns.add(pos);
                         }
                     }
@@ -102,15 +138,30 @@ public class ClientMod implements ClientModInitializer {
         return foundSigns;
     }
 
-    private static boolean signMatchesSearch(SignBlockEntity sign, String searchPattern) {
-        // Получаем текст с передней стороны таблички и делаем маленькими буквами
-        String signText = getFrontText(sign).toLowerCase();
+    private static boolean signMatchesSearch(SignBlockEntity sign, String pattern, boolean useRegex) {
+        // Получаем текст с передней стороны таблички
+        String signText = getFrontText(sign);
 
-        // Поисковый шаблон тоже делаем маленькими буквами
-        String searchPatternLower = searchPattern.toLowerCase();
+        if (useRegex) {
+            // Используем регулярное выражение (регистрозависимое)
+            return matchesRegex(signText, pattern);
+        } else {
+            // Используем обычный поиск (регистронезависимый)
+            String signTextLower = signText.toLowerCase();
+            String patternLower = pattern.toLowerCase();
+            return evaluateSearchPattern(signTextLower, patternLower);
+        }
+    }
 
-        // Парсим поисковый шаблон
-        return evaluateSearchPattern(signText, searchPatternLower);
+    private static boolean matchesRegex(String text, String regexPattern) {
+        try {
+            Pattern pattern = Pattern.compile(regexPattern);
+            Matcher matcher = pattern.matcher(text);
+            return matcher.find();
+        } catch (Exception e) {
+            // Если регулярное выражение некорректное, возвращаем false
+            return false;
+        }
     }
 
     private static String getFrontText(SignBlockEntity sign) {
