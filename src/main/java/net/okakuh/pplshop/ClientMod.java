@@ -17,6 +17,26 @@ import java.util.regex.Matcher;
 
 public class ClientMod implements ClientModInitializer {
 
+    // ==================== НАСТРАИВАЕМЫЕ ПЕРЕМЕННЫЕ ====================
+
+    // Параметры по умолчанию для команды /shop
+    public static final int DEFAULT_STACK_SIZE = 64;
+    public static final int DEFAULT_SEARCH_RADIUS = 30;
+
+    // Настройки поиска табличек
+    public static final int MIN_Y_SEARCH = 0;      // Минимальная Y координата для поиска
+    public static final int MAX_Y_SEARCH = 3;      // Максимальная Y координата для поиска
+
+    // Настройки проверки табличек
+    public static final boolean SEARCH_FRONT_SIDE = true;  // Искать на передней стороне таблички
+
+    // Ограничения параметров
+    public static final int MIN_STACK_SIZE = 1;
+    public static final int MAX_STACK_SIZE = 64;
+    public static final int MIN_RADIUS = 0;
+
+    // ==================== КОНЕЦ НАСТРАИВАЕМЫХ ПЕРЕМЕННЫХ ====================
+
     @Override
     public void onInitializeClient() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
@@ -26,18 +46,18 @@ public class ClientMod implements ClientModInitializer {
                             .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("search_pattern", StringArgumentType.string())
                                     .executes(context -> {
                                         String searchPattern = StringArgumentType.getString(context, "search_pattern");
-                                        int stack = 64;
-                                        int radius = 30;
+                                        int stack = DEFAULT_STACK_SIZE;
+                                        int radius = DEFAULT_SEARCH_RADIUS;
                                         return executeShop(context, searchPattern, stack, radius, false);
                                     })
-                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("stack", IntegerArgumentType.integer(1, 64))
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("stack", IntegerArgumentType.integer(MIN_STACK_SIZE, MAX_STACK_SIZE))
                                             .executes(context -> {
                                                 String searchPattern = StringArgumentType.getString(context, "search_pattern");
                                                 int stack = IntegerArgumentType.getInteger(context, "stack");
-                                                int radius = 30;
+                                                int radius = DEFAULT_SEARCH_RADIUS;
                                                 return executeShop(context, searchPattern, stack, radius, false);
                                             })
-                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("radius", IntegerArgumentType.integer(0))
+                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("radius", IntegerArgumentType.integer(MIN_RADIUS))
                                                     .executes(context -> {
                                                         String searchPattern = StringArgumentType.getString(context, "search_pattern");
                                                         int stack = IntegerArgumentType.getInteger(context, "stack");
@@ -55,18 +75,18 @@ public class ClientMod implements ClientModInitializer {
                             .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("regex_pattern", StringArgumentType.string())
                                     .executes(context -> {
                                         String regexPattern = StringArgumentType.getString(context, "regex_pattern");
-                                        int stack = 64;
-                                        int radius = 30;
+                                        int stack = DEFAULT_STACK_SIZE;
+                                        int radius = DEFAULT_SEARCH_RADIUS;
                                         return executeShop(context, regexPattern, stack, radius, true);
                                     })
-                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("stack", IntegerArgumentType.integer(1, 64))
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("stack", IntegerArgumentType.integer(MIN_STACK_SIZE, MAX_STACK_SIZE))
                                             .executes(context -> {
                                                 String regexPattern = StringArgumentType.getString(context, "regex_pattern");
                                                 int stack = IntegerArgumentType.getInteger(context, "stack");
-                                                int radius = 30;
+                                                int radius = DEFAULT_SEARCH_RADIUS;
                                                 return executeShop(context, regexPattern, stack, radius, true);
                                             })
-                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("radius", IntegerArgumentType.integer(0))
+                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("radius", IntegerArgumentType.integer(MIN_RADIUS))
                                                     .executes(context -> {
                                                         String regexPattern = StringArgumentType.getString(context, "regex_pattern");
                                                         int stack = IntegerArgumentType.getInteger(context, "stack");
@@ -114,9 +134,9 @@ public class ClientMod implements ClientModInitializer {
         int minZ = playerPos.getZ() - radius;
         int maxZ = playerPos.getZ() + radius;
 
-        // По Y ищем от 0 до 3 включительно
-        int minY = 0;
-        int maxY = 3;
+        // Используем настраиваемые Y координаты
+        int minY = MIN_Y_SEARCH;
+        int maxY = MAX_Y_SEARCH;
 
         // Ищем таблички в указанной области
         for (int x = minX; x <= maxX; x++) {
@@ -167,8 +187,8 @@ public class ClientMod implements ClientModInitializer {
     private static String getFrontText(SignBlockEntity sign) {
         String[] text = new String[4];
         for (int i = 0; i < 4; i++) {
-            // true = передняя сторона, false = задняя сторона
-            Text line = sign.getText(true).getMessage(i, false);
+            // Используем настраиваемую сторону таблички
+            Text line = sign.getText(SEARCH_FRONT_SIDE).getMessage(i, false);
             text[i] = line.getString().trim();
         }
         // Объединяем все строки в один текст для поиска
