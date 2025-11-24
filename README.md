@@ -1,6 +1,6 @@
 # PPL Shop
 
-Client-side Minecraft mod for finding signs. Helps locate best deals.
+Client-side Minecraft mod for finding signs with matched text. Parses price and amount and helps locate best deals.
 
 ## Features
 
