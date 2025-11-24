@@ -1,4 +1,4 @@
-# PPL Shop Finder
+# PPL Shop
 
 Client-side Minecraft mod for finding signs. Helps locate best deals.
 
