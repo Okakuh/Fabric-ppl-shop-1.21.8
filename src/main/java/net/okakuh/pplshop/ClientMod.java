@@ -3,6 +3,7 @@ package net.okakuh.pplshop;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.text.Text;
@@ -11,6 +12,7 @@ import net.minecraft.world.World;
 import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.util.InputUtil;
+import net.minecraft.util.DyeColor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,6 +60,11 @@ public class ClientMod implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        // Регистрируем рендер подсветки
+        WorldRenderEvents.AFTER_TRANSLUCENT.register(context -> {
+            BlockHighlighter.render(context);
+        });
+
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             // Команда /shop для обычного поиска
             dispatcher.register(
@@ -123,6 +130,7 @@ public class ClientMod implements ClientModInitializer {
             if (client.player == null || client.currentScreen != null) return;
             handleKeyNavigation(client);
         });
+
     }
 
     private static void handleKeyNavigation(net.minecraft.client.MinecraftClient client) {
@@ -170,14 +178,24 @@ public class ClientMod implements ClientModInitializer {
     // Метод для подсветки текущей группы
     private static void highlightCurrentGroup() {
         if (!navigationActive || currentGroupIndex < 0 || currentGroupIndex >= currentPriceKeys.size()) {
+            BlockHighlighter.clearHighlights();
             return;
         }
 
         Double currentPrice = currentPriceKeys.get(currentGroupIndex);
         List<BlockPos> currentGroup = currentSortedSigns.get(currentPrice);
 
-        // Здесь можно добавить визуальное выделение табличек
-        System.out.println("Highlighting group " + currentGroupIndex + " with price " + currentPrice + ", signs: " + currentGroup.size());
+        // Подсвечиваем таблички текущей группы зеленым цветом
+        BlockHighlighter.highlightBlocks(currentGroup, DyeColor.LIME);
+
+        // Выводим информацию о текущей группе
+        if (net.minecraft.client.MinecraftClient.getInstance().player != null) {
+            net.minecraft.client.MinecraftClient.getInstance().player.sendMessage(
+                    Text.literal("§aГруппа " + (currentGroupIndex + 1) + "/" + currentPriceKeys.size() +
+                            " - Цена: " + String.format("%.2f", currentPrice) + " - Табличек: " + currentGroup.size()),
+                    false
+            );
+        }
     }
 
     // Метод для перехода к следующей группе
@@ -206,9 +224,14 @@ public class ClientMod implements ClientModInitializer {
         currentSortedSigns = null;
         currentPriceKeys = null;
         currentGroupIndex = -1;
+        BlockHighlighter.clearHighlights();
 
-        // Здесь можно убрать визуальное выделение
-        System.out.println("Navigation stopped");
+        if (net.minecraft.client.MinecraftClient.getInstance().player != null) {
+            net.minecraft.client.MinecraftClient.getInstance().player.sendMessage(
+                    Text.literal("§cНавигация завершена - подсветка убрана"),
+                    false
+            );
+        }
     }
 
     private static int executeShop(com.mojang.brigadier.context.CommandContext<net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource> context, String pattern, int stack, int radius, boolean useRegex) {
