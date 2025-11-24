@@ -13,11 +13,12 @@ Client-side Minecraft mod for finding shops by sign prices. Helps locate best de
 ## Usage
 
 ### Basic Commands
+```bash
 /shop "алмаз"
 /shop "кирк+починка" 1
 /shop "кирк+починка" 1 50
 /shopr "[а-я]+.*алм"
-
+bash```
 ### Search Patterns
 /shop "алмаз+руда"                 # AND search 
 /shop "алмаз-уголь"                # OR search  
