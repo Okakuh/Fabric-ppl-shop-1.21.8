@@ -1,36 +1,36 @@
 # PPL Shop
 
-Client-side Minecraft mod for finding signs with matched text. Parses price and amount and helps locate best deals.
+Клиентский мод для Minecraft для поиска табличек с соответствующим текстом. Парсит цены и количество, помогает находить лучшие предложения.
 
-## Features
+## Функции
 
-- **Smart search**: `/shop <pattern> [stack] [radius]`
-- **Regex search**: `/shopr <regex> [stack] [radius]`
-- **Price navigation**: Arrow keys to cycle through price groups
-- **Visual highlighting**: Green outlines highlight signs in current price group 
-- **Smart parsing**: Supports various price formats and units
+- **Умный поиск**: `/shop <паттерн> [стак] [радиус]`
+- **Поиск по regex**: `/shopr <регулярное_выражение> [стак] [радиус]`
+- **Навигация по ценам**: Стрелки для переключения между ценовыми группами
+- **Визуальная подсветка**: Зеленые контуры выделяют таблички текущей ценовой группы
+- **Умный парсинг**: Поддержка различных форматов цен и единиц измерения
 
-## Usage
+## Использование
 
-### Search Patterns
+### Паттерны поиска
 ```bash
-/shop "алмаз+руда"                 # AND search 
-/shop "алмаз-уголь"                # OR search  
-/shop "кирк+удач-кирка-кирка+шелк" # Mixed (кирк AND удач) or (кирка) or (кирка and шелк)
-/shopr "[а-я]+.*алм"               # Regex search
+/shop "алмаз+руда"                 # И поиск 
+/shop "алмаз-уголь"                # ИЛИ поиск  
+/shop "кирк+удач-кирка-кирка+шелк" # Смешанный (кирк И удач) или (кирка) или (кирка и шелк)
+/shopr "[а-я]+.*алм"               # Поиск по регулярному выражению
 ```
-### Navigation
-- ↑/↓ arrows - Switch between price groups
-- Backspace - Stop navigation and end search
-- Current price category shown above hotbar
-- Signs in current group highlighted with green outlines
+### Навигация
+- Стрелки ↑/↓ - Переключение между ценовыми группами
+- Backspace - Остановить навигацию и завершить поиск
+- Текущая ценовая категория отображается над хотбаром
+- Таблички текущей группы выделяются зелеными контурами
 
-## Default Settings
-- Stack size: 64
-- Search radius: 40 blocks
-- Y-range: 0-3 blocks
+## Настройки по умолчанию
+- Размер стака: 64
+- Радиус поиска: 40 блоков
+- Диапазон по Y: 0-3 блока
 
-### Key words for price and amount
+## Логика определения количества
 - "ст" = стак = умножить найденное количество на параметр stack
 - "ша" = шалкер = умножить найденное количество на параметр stack*27
 - "м" = мешок = умножить найденное количество на параметр stack
@@ -38,7 +38,7 @@ Client-side Minecraft mod for finding signs with matched text. Parses price and 
     - если найденное количество равно 1, то присвоить количеству значение stack / 4 (для поиска блоков)
     - если найденное количество равно 2 и больше, умножить найденное количество на параметр stack (для поиска блоков)
 
-## Requirements
+##Требования
 - Minecraft 1.21+
 - Fabric Loader
 - Fabric API
