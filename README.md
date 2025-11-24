@@ -26,19 +26,19 @@ Current price category shown above hotbar
 Signs in current group highlighted with green outlines
 
 ## Default Settings
-Stack size: 64
-Search radius: 40 blocks
-Y-range: 0-3 blocks
+Stack size: 64\n
+Search radius: 40 blocks\n
+Y-range: 0-3 blocks\n
 
 ### Key words for price and amount
-"ст" = стак = умножить найденное количество на параметр stack
-"ша" = шалкер = умножить найденное количество на параметр stack*27
-"м" = мешок = умножить найденное количество на параметр stack
-"сло" = слот:
+"ст" = стак = умножить найденное количество на параметр stack\n
+"ша" = шалкер = умножить найденное количество на параметр stack*27\n
+"м" = мешок = умножить найденное количество на параметр stack\n
+"сло" = слот:\n
     если найденное количество равно 1, то присвоить количеству значение stack / 4 (для поиска блоков)
     если найденное количество равно 2 и больше, умножить найденное количество на параметр stack (для поиска блоков)
 
-Requirements
-Minecraft 1.21+
-Fabric Loader
+## Requirements
+Minecraft 1.21+\n
+Fabric Loader\n
 Fabric API
