@@ -30,7 +30,7 @@ public class BlockHighlighter {
                             .withFragmentShader("core/position_color")
                             .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
                             .withCull(false)
-                            .withVertexFormat(VertexFormats.POSITION_COLOR, VertexFormat.DrawMode.DEBUG_LINE_STRIP)
+                            .withVertexFormat(VertexFormats.POSITION_COLOR, VertexFormat.DrawMode.DEBUG_LINES)
                             .build()
             ),
             RenderLayer.MultiPhaseParameters.builder().lineWidth(new RenderPhase.LineWidth(OptionalDouble.of(3.0))).build(false)
@@ -76,14 +76,35 @@ public class BlockHighlighter {
         double maxY = pos.getY() + 1;
         double maxZ = pos.getZ() + 1;
 
-        // Нижняя грань
+        // 12 линий куба (без диагоналей)
+
+        // Нижняя грань (4 линии)
         buffer.vertex(model, (float) minX, (float) minY, (float) minZ).color(highlightColor);
         buffer.vertex(model, (float) maxX, (float) minY, (float) minZ).color(highlightColor);
+
+        buffer.vertex(model, (float) maxX, (float) minY, (float) minZ).color(highlightColor);
         buffer.vertex(model, (float) maxX, (float) minY, (float) maxZ).color(highlightColor);
+
+        buffer.vertex(model, (float) maxX, (float) minY, (float) maxZ).color(highlightColor);
+        buffer.vertex(model, (float) minX, (float) minY, (float) maxZ).color(highlightColor);
+
         buffer.vertex(model, (float) minX, (float) minY, (float) maxZ).color(highlightColor);
         buffer.vertex(model, (float) minX, (float) minY, (float) minZ).color(highlightColor);
 
-        // Вертикальные ребра
+        // Верхняя грань (4 линии)
+        buffer.vertex(model, (float) minX, (float) maxY, (float) minZ).color(highlightColor);
+        buffer.vertex(model, (float) maxX, (float) maxY, (float) minZ).color(highlightColor);
+
+        buffer.vertex(model, (float) maxX, (float) maxY, (float) minZ).color(highlightColor);
+        buffer.vertex(model, (float) maxX, (float) maxY, (float) maxZ).color(highlightColor);
+
+        buffer.vertex(model, (float) maxX, (float) maxY, (float) maxZ).color(highlightColor);
+        buffer.vertex(model, (float) minX, (float) maxY, (float) maxZ).color(highlightColor);
+
+        buffer.vertex(model, (float) minX, (float) maxY, (float) maxZ).color(highlightColor);
+        buffer.vertex(model, (float) minX, (float) maxY, (float) minZ).color(highlightColor);
+
+        // Вертикальные ребра (4 линии)
         buffer.vertex(model, (float) minX, (float) minY, (float) minZ).color(highlightColor);
         buffer.vertex(model, (float) minX, (float) maxY, (float) minZ).color(highlightColor);
 
@@ -95,12 +116,5 @@ public class BlockHighlighter {
 
         buffer.vertex(model, (float) minX, (float) minY, (float) maxZ).color(highlightColor);
         buffer.vertex(model, (float) minX, (float) maxY, (float) maxZ).color(highlightColor);
-
-        // Верхняя грань
-        buffer.vertex(model, (float) minX, (float) maxY, (float) minZ).color(highlightColor);
-        buffer.vertex(model, (float) maxX, (float) maxY, (float) minZ).color(highlightColor);
-        buffer.vertex(model, (float) maxX, (float) maxY, (float) maxZ).color(highlightColor);
-        buffer.vertex(model, (float) minX, (float) maxY, (float) maxZ).color(highlightColor);
-        buffer.vertex(model, (float) minX, (float) maxY, (float) minZ).color(highlightColor);
     }
 }
