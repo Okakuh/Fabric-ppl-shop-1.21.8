@@ -37,7 +37,7 @@ public class BlockHighlighter {
     );
 
     private static List<BlockPos> highlightedBlocks = new ArrayList<>();
-    private static int highlightColor = 0xFFFFFFFF; // Белый по умолчанию
+    private static int highlightColor = 0xFFFFFFFF;
 
     public static void highlightBlocks(List<BlockPos> blocks, DyeColor color) {
         highlightedBlocks = new ArrayList<>(blocks);
@@ -76,7 +76,7 @@ public class BlockHighlighter {
         double maxY = pos.getY() + 1;
         double maxZ = pos.getZ() + 1;
 
-        // 12 линий куба (без диагоналей)
+        // 12 линий куба (все грани)
 
         // Нижняя грань (4 линии)
         buffer.vertex(model, (float) minX, (float) minY, (float) minZ).color(highlightColor);

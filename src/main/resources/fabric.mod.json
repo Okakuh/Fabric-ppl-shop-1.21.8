@@ -14,7 +14,7 @@
       "net.okakuh.pplshop.PPLShop"
     ],
     "client": [
-      "net.okakuh.pplshop.ClientMod"
+      "net.okakuh.pplshop.PPLShopClient"
     ]
   },
   "depends": {
