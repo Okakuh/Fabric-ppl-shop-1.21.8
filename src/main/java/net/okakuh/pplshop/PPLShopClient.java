@@ -67,7 +67,7 @@ public class PPLShopClient implements ClientModInitializer {
             BlockHighlighter.render(context);
         });
 
-        // Обработчик тиков для навигации
+        // Обработчик тиков для навигаци
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null || client.currentScreen != null) return;
             handleKeyNavigation(client);
