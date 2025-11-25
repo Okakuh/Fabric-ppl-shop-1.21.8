@@ -74,28 +74,31 @@ public class PPLShopClient implements ClientModInitializer {
         });
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            // Команда /shop для обычного поиска
+            // Команда /shop stack search_pattern
             dispatcher.register(
                     net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("shop")
-                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("search_pattern", StringArgumentType.string())
-                                    .executes(context -> {
-                                        String searchPattern = StringArgumentType.getString(context, "search_pattern");
-                                        int stack = DEFAULT_STACK_SIZE;
-                                        int radius = DEFAULT_SEARCH_RADIUS;
-                                        return executeShop(context, searchPattern, stack, radius, false);
-                                    })
-                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("stack", IntegerArgumentType.integer(MIN_STACK_SIZE, MAX_STACK_SIZE))
+                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("stack", IntegerArgumentType.integer(MIN_STACK_SIZE, MAX_STACK_SIZE))
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("search_pattern", StringArgumentType.greedyString())
                                             .executes(context -> {
-                                                String searchPattern = StringArgumentType.getString(context, "search_pattern");
                                                 int stack = IntegerArgumentType.getInteger(context, "stack");
+                                                String searchPattern = StringArgumentType.getString(context, "search_pattern");
                                                 int radius = DEFAULT_SEARCH_RADIUS;
                                                 return executeShop(context, searchPattern, stack, radius, false);
                                             })
-                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("radius", IntegerArgumentType.integer(MIN_RADIUS))
+                                    )
+                            )
+            );
+
+            // Команда /shop_radius radius stack search_pattern
+            dispatcher.register(
+                    net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("shop_radius")
+                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("radius", IntegerArgumentType.integer(MIN_RADIUS))
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("stack", IntegerArgumentType.integer(MIN_STACK_SIZE, MAX_STACK_SIZE))
+                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("search_pattern", StringArgumentType.greedyString())
                                                     .executes(context -> {
-                                                        String searchPattern = StringArgumentType.getString(context, "search_pattern");
-                                                        int stack = IntegerArgumentType.getInteger(context, "stack");
                                                         int radius = IntegerArgumentType.getInteger(context, "radius");
+                                                        int stack = IntegerArgumentType.getInteger(context, "stack");
+                                                        String searchPattern = StringArgumentType.getString(context, "search_pattern");
                                                         return executeShop(context, searchPattern, stack, radius, false);
                                                     })
                                             )
@@ -103,28 +106,31 @@ public class PPLShopClient implements ClientModInitializer {
                             )
             );
 
-            // Команда /shopr для поиска по регулярным выражениям
+            // Команда /shop_rgx stack regex_pattern
             dispatcher.register(
-                    net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("shopr")
-                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("regex_pattern", StringArgumentType.string())
-                                    .executes(context -> {
-                                        String regexPattern = StringArgumentType.getString(context, "regex_pattern");
-                                        int stack = DEFAULT_STACK_SIZE;
-                                        int radius = DEFAULT_SEARCH_RADIUS;
-                                        return executeShop(context, regexPattern, stack, radius, true);
-                                    })
-                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("stack", IntegerArgumentType.integer(MIN_STACK_SIZE, MAX_STACK_SIZE))
+                    net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("shop_rgx")
+                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("stack", IntegerArgumentType.integer(MIN_STACK_SIZE, MAX_STACK_SIZE))
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("regex_pattern", StringArgumentType.greedyString())
                                             .executes(context -> {
-                                                String regexPattern = StringArgumentType.getString(context, "regex_pattern");
                                                 int stack = IntegerArgumentType.getInteger(context, "stack");
+                                                String regexPattern = StringArgumentType.getString(context, "regex_pattern");
                                                 int radius = DEFAULT_SEARCH_RADIUS;
                                                 return executeShop(context, regexPattern, stack, radius, true);
                                             })
-                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("radius", IntegerArgumentType.integer(MIN_RADIUS))
+                                    )
+                            )
+            );
+
+            // Команда /shop_rgx_radius radius stack regex_pattern
+            dispatcher.register(
+                    net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("shop_rgx_radius")
+                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("radius", IntegerArgumentType.integer(MIN_RADIUS))
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("stack", IntegerArgumentType.integer(MIN_STACK_SIZE, MAX_STACK_SIZE))
+                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("regex_pattern", StringArgumentType.greedyString())
                                                     .executes(context -> {
-                                                        String regexPattern = StringArgumentType.getString(context, "regex_pattern");
-                                                        int stack = IntegerArgumentType.getInteger(context, "stack");
                                                         int radius = IntegerArgumentType.getInteger(context, "radius");
+                                                        int stack = IntegerArgumentType.getInteger(context, "stack");
+                                                        String regexPattern = StringArgumentType.getString(context, "regex_pattern");
                                                         return executeShop(context, regexPattern, stack, radius, true);
                                                     })
                                             )
