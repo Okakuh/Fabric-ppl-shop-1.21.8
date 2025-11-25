@@ -1,12 +1,14 @@
 package net.okakuh.pepelandshop;
 
-import com.mojang.brigadier.arguments.BoolArgumentType;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.arguments.BoolArgumentType;
+
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
@@ -27,57 +29,16 @@ import java.util.Arrays;
 import static net.okakuh.pepelandshop.ConfigManager.*;
 
 public class PepelandShopClient implements ClientModInitializer {
-
-    public static int getDefaultSearchRadius() {
-        return getConfig().default_radius;
-    }
-
-    public static int getMinYSearch() {
-        List<Integer> yCoords = getConfig().y_coords;
-        return yCoords.size() > 0 ? yCoords.get(0) : 0;
-    }
-
-    public static int getMaxYSearch() {
-        List<Integer> yCoords = getConfig().y_coords;
-        return yCoords.size() > 1 ? yCoords.get(1) : 3;
-    }
-
-    public static String getPricePattern() {
-        return getConfig().price_pattern;
-    }
-
-    public static String getAmountPattern() {
-        return getConfig().amount_pattern;
-    }
-
-    public static Formatting getFirstHighlightColor() {
-        List<String> colors = getConfig().highlight_colors;
-        String firstColor = colors.size() > 0 ? colors.get(0) : "white";
-        return convertColorNameToFormatting(firstColor);
-    }
-
-    public static Formatting getSecondHighlightColor() {
-        List<String> colors = getConfig().highlight_colors;
-        String secondColor = colors.size() > 1 ? colors.get(1) : "black";
-        return convertColorNameToFormatting(secondColor);
-    }
-
-    private static Formatting convertColorNameToFormatting(String colorName) {
-        try {
-            return Formatting.byName(colorName.toUpperCase());
-        } catch (Exception e) {
-            return Formatting.GREEN; // по умолчанию
-        }
-    }
+    // ==================== УДОБСТВО ====================
     private static int currentStackSize = 0;
 
-    // ==================== СИСТЕМА НАВИГАЦИИ ====================
     private static Map<Double, List<BlockPos>> currentSortedSigns = null;
     private static List<Double> currentPriceKeys = null;
     private static int currentGroupIndex = -1;
+
     private static boolean navigationActive = false;
 
-    // Флаги для защиты от множественных нажатий
+    // Флаги для защиты от множественных нажатий навигации
     private static boolean wasUpPressed = false;
     private static boolean wasDownPressed = false;
     private static boolean wasBackspacePressed = false;
@@ -530,7 +491,6 @@ public class PepelandShopClient implements ClientModInitializer {
         }
     }
 
-    // Метод для начала навигации
     private static void startNavigation(Map<Double, List<BlockPos>> sortedSigns, int stack) {
         currentSortedSigns = sortedSigns;
         currentPriceKeys = new ArrayList<>(sortedSigns.keySet());
@@ -541,7 +501,6 @@ public class PepelandShopClient implements ClientModInitializer {
         highlightCurrentGroup();
     }
 
-    // Метод для подсветки текущей группы
     private static void highlightCurrentGroup() {
         if (!navigationActive || currentGroupIndex < 0 || currentGroupIndex >= currentPriceKeys.size()) {
             BlockHighlighter.clearHighlights();
@@ -566,7 +525,6 @@ public class PepelandShopClient implements ClientModInitializer {
         }
     }
 
-    // Метод для перехода к следующей группе
     private static void nextGroup() {
         if (!navigationActive || currentPriceKeys == null) return;
 
@@ -617,34 +575,29 @@ public class PepelandShopClient implements ClientModInitializer {
         }
     }
 
-    private static int executeShop(com.mojang.brigadier.context.CommandContext<net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource> context, String pattern, int stack, int radius, boolean useRegex) {
+    private static int executeShop(
+            com.mojang.brigadier.context.CommandContext<net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource> context,
+            String pattern, int stack, int radius, boolean useRegex) {
         var source = context.getSource();
 
         // Выводим параметры поиска в чат
         if (useRegex) {
-            source.sendFeedback(Text.literal("§aRegex Pattern: §f" + pattern));
+            source.sendFeedback(Text.literal("§aRegex патерн: §f" + pattern));
         } else {
-            source.sendFeedback(Text.literal("§aSearch Pattern: §f" + pattern));
+            source.sendFeedback(Text.literal("§aПатерн поиска: §f" + pattern));
         }
-        source.sendFeedback(Text.literal("§aStack: §f" + stack));
-        source.sendFeedback(Text.literal("§aRadius: §f" + radius));
+        source.sendFeedback(Text.literal("§aРазмер стака: §f" + stack));
+        source.sendFeedback(Text.literal("§aРадиус: §f" + radius));
 
-        // Ищем таблички
         List<BlockPos> foundSigns = findSignsAroundPlayer(source, radius, pattern, useRegex);
 
-        // Выводим количество найденных табличек в чат
         source.sendFeedback(Text.literal("§6Найдено табличек: §e" + foundSigns.size()));
 
-        // Сортируем и группируем по цене
         World world = source.getWorld();
         Map<Double, List<BlockPos>> sortedSigns = sortAndGroupSignsByPrice(foundSigns, stack, world);
 
-        // Выводим инструкции по навигации в чат
         source.sendFeedback(Text.literal(""));
         source.sendFeedback(Text.literal("§6=== НАВИГАЦИЯ ==="));
-        source.sendFeedback(Text.literal("§eСтрелка ВВЕРХ §7- следующая группа"));
-        source.sendFeedback(Text.literal("§eСтрелка ВНИЗ §7- предыдущая группа"));
-        source.sendFeedback(Text.literal("§eBackspace §7- завершить навигацию"));
 
         Config config = getConfig();
         if (config.use_alternative_navigation) {
@@ -652,22 +605,22 @@ public class PepelandShopClient implements ClientModInitializer {
             source.sendFeedback(Text.literal("§e" + config.alternative_navigation.previous_group.getDisplayName() + " §7- альтернативная предыдущая группа"));
             source.sendFeedback(Text.literal("§e" + config.alternative_navigation.end_navigation.getDisplayName() + " §7- альтернативная остановка"));
         } else {
-            source.sendFeedback(Text.literal("§7Альтернативная навигация отключена в настройках"));
+            source.sendFeedback(Text.literal("§eСтрелк ВВЕРХ/ВНИЗ §7- навигация по группам"));
+            source.sendFeedback(Text.literal("§eBackspace §7- завершить навигацию"));
         }
-
         source.sendFeedback(Text.literal("§6=================="));
 
-        // Запускаем навигацию
         if (!sortedSigns.isEmpty()) {
             startNavigation(sortedSigns, stack);
         } else {
-            source.sendFeedback(Text.literal("§cНе найдено подходящих табличек для навигации"));
+            source.sendFeedback(Text.literal("§cСовпадения не найдены!"));
         }
 
         return 1;
     }
 
-    private static List<BlockPos> findSignsAroundPlayer(net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource source, int radius, String pattern, boolean useRegex) {
+    private static List<BlockPos> findSignsAroundPlayer(net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource source,
+            int radius, String pattern, boolean useRegex) {
         List<BlockPos> foundSigns = new ArrayList<>();
         World world = source.getWorld();
         BlockPos playerPos = source.getPlayer().getBlockPos();
@@ -720,7 +673,6 @@ public class PepelandShopClient implements ClientModInitializer {
             Matcher matcher = pattern.matcher(text);
             return matcher.find();
         } catch (Exception e) {
-            // Если регулярное выражение некорректное, возвращаем false
             return false;
         }
     }
@@ -775,7 +727,6 @@ public class PepelandShopClient implements ClientModInitializer {
         return true;
     }
 
-    // Новый класс для хранения информации о табличке с ценой
     private static class SignPriceInfo {
         public BlockPos position;
         public double pricePerUnit;
@@ -790,7 +741,6 @@ public class PepelandShopClient implements ClientModInitializer {
         }
     }
 
-    // Функция для сортировки и группировки табличек по цене
     private static Map<Double, List<BlockPos>> sortAndGroupSignsByPrice(List<BlockPos> foundSigns, int stackAmount, World world) {
         List<SignPriceInfo> signPriceInfos = new ArrayList<>();
 
@@ -819,7 +769,6 @@ public class PepelandShopClient implements ClientModInitializer {
         return groupedSigns;
     }
 
-    // Функция для парсинга цены за единицу
     private static double parsePricePerUnit(SignBlockEntity sign, int stackAmount) {
         String[] lines = getFrontTextArray(sign);
         String allLinesLower = String.join(" ", lines).toLowerCase();
@@ -861,7 +810,6 @@ public class PepelandShopClient implements ClientModInitializer {
         return (double) resultPrice / resultAmount;
     }
 
-    // Вспомогательный метод для получения текста таблички как массива
     private static String[] getFrontTextArray(SignBlockEntity sign) {
         String[] text = new String[4];
         for (int i = 0; i < 4; i++) {
@@ -871,7 +819,6 @@ public class PepelandShopClient implements ClientModInitializer {
         return text;
     }
 
-    // Поиск всех совпадений по регулярному выражению
     private static List<String> regexFindAll(String text, String patternStr) {
         List<String> matches = new ArrayList<>();
         try {
@@ -886,7 +833,6 @@ public class PepelandShopClient implements ClientModInitializer {
         return matches;
     }
 
-    // Парсинг цены
     private static int parsePrice(String text) {
         String digits = text.replaceAll("\\D", "");
         int price = digits.isEmpty() ? 0 : Integer.parseInt(digits);
@@ -898,7 +844,6 @@ public class PepelandShopClient implements ClientModInitializer {
         return price;
     }
 
-    // Парсинг количества
     private static int parseAmount(String amountText, int stackAmount) {
         String digits = amountText.replaceAll("\\D", "");
         int amount = digits.isEmpty() ? 1 : Integer.parseInt(digits);
@@ -920,7 +865,6 @@ public class PepelandShopClient implements ClientModInitializer {
         return amount;
     }
 
-    // Функция для форматирования сообщения о цене
     private static String parseMessage(double price, int stackAmount) {
         StringBuilder message = new StringBuilder();
 
@@ -968,24 +912,66 @@ public class PepelandShopClient implements ClientModInitializer {
 
             // Шалкеры - фиолетовый
             if (shulkers >= 1) {
-                message.append("§d").append(shulkers).append("шалк.§r");
+                message.append("§d").append(shulkers).append("шалк§r");
                 f = true;
             }
 
             // Стаки - голубой
             if (stacks >= 1) {
                 if (f) message.append("§7+§r");
-                message.append("§b").append(stacks).append("ст.§r");
+                message.append("§b").append(stacks).append("ст§r");
                 f = true;
             }
 
             // Штуки - зеленый
             if (amountInt >= 1) {
                 if (f) message.append("§7+§r");
-                message.append("§a").append(amountInt).append("шт.§r");
+                message.append("§a").append(amountInt).append("шт§r");
             }
         }
 
         return message.toString();
+    }
+
+    public static int getDefaultSearchRadius() {
+        return getConfig().default_radius;
+    }
+
+    public static int getMinYSearch() {
+        List<Integer> yCoords = getConfig().y_coords;
+        return yCoords.size() > 0 ? yCoords.get(0) : 0;
+    }
+
+    public static int getMaxYSearch() {
+        List<Integer> yCoords = getConfig().y_coords;
+        return yCoords.size() > 1 ? yCoords.get(1) : 3;
+    }
+
+    public static String getPricePattern() {
+        return getConfig().price_pattern;
+    }
+
+    public static String getAmountPattern() {
+        return getConfig().amount_pattern;
+    }
+
+    public static Formatting getFirstHighlightColor() {
+        List<String> colors = getConfig().highlight_colors;
+        String firstColor = colors.size() > 0 ? colors.get(0) : "white";
+        return convertColorNameToFormatting(firstColor);
+    }
+
+    public static Formatting getSecondHighlightColor() {
+        List<String> colors = getConfig().highlight_colors;
+        String secondColor = colors.size() > 1 ? colors.get(1) : "black";
+        return convertColorNameToFormatting(secondColor);
+    }
+
+    private static Formatting convertColorNameToFormatting(String colorName) {
+        try {
+            return Formatting.byName(colorName.toUpperCase());
+        } catch (Exception e) {
+            return Formatting.GREEN; // по умолчанию
+        }
     }
 }
