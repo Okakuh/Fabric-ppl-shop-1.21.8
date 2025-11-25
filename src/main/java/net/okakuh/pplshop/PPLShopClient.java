@@ -319,7 +319,7 @@ public class PPLShopClient implements ClientModInitializer {
                                         Formatting color1 = convertColorNameToFormatting(config.highlight_colors.get(0));
                                         Formatting color2 = convertColorNameToFormatting(config.highlight_colors.get(1));
 
-                                        context.getSource().sendFeedback(Text.literal("§6=== НАСТРОЙКИ PPLSHOP ==="));
+                                        context.getSource().sendFeedback(Text.literal("§6=== НАСТРОЙКИ PepeLand Shop ==="));
                                         context.getSource().sendFeedback(Text.literal("§aРадиус по умолчанию: §e" + config.default_radius));
                                         context.getSource().sendFeedback(Text.literal("§aСтак по умолчанию: §e" + config.default_stack));
                                         context.getSource().sendFeedback(Text.literal("§aПаттерн цены: §e" + config.price_pattern));
