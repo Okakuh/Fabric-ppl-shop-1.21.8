@@ -37,11 +37,13 @@ public class BlockHighlighter {
     );
 
     private static List<BlockPos> highlightedBlocks = new ArrayList<>();
-    private static int highlightColor = 0xFFFFFFFF;
+    private static int highlightColor1 = 0xFFFFFFFF;
+    private static int highlightColor2 = 0xFFFFFFFF;
 
-    public static void highlightBlocks(List<BlockPos> blocks, DyeColor color) {
+    public static void highlightBlocks(List<BlockPos> blocks, DyeColor color1, DyeColor color2) {
         highlightedBlocks = new ArrayList<>(blocks);
-        highlightColor = color.getEntityColor() | 0xFF000000;
+        highlightColor1 = color1.getEntityColor() | 0xFF000000;
+        highlightColor2 = color2.getEntityColor() | 0xFF000000;
     }
 
     public static void clearHighlights() {
@@ -76,45 +78,78 @@ public class BlockHighlighter {
         double maxY = pos.getY() + 1;
         double maxZ = pos.getZ() + 1;
 
-        // 12 линий куба (все грани)
+        // Цвета для противоположных вершин:
+        // Color1: minX, minY, minZ (нижняя-задняя-левая)
+        // Color2: maxX, maxY, maxZ (верхняя-передняя-правая)
 
         // Нижняя грань (4 линии)
-        buffer.vertex(model, (float) minX, (float) minY, (float) minZ).color(highlightColor);
-        buffer.vertex(model, (float) maxX, (float) minY, (float) minZ).color(highlightColor);
+        // minX,minY,minZ -> maxX,minY,minZ (от color1 к смешанному)
+        buffer.vertex(model, (float) minX, (float) minY, (float) minZ).color(highlightColor1);
+        buffer.vertex(model, (float) maxX, (float) minY, (float) minZ).color(interpolateColor(highlightColor1, highlightColor2, 0.5f));
 
-        buffer.vertex(model, (float) maxX, (float) minY, (float) minZ).color(highlightColor);
-        buffer.vertex(model, (float) maxX, (float) minY, (float) maxZ).color(highlightColor);
+        // maxX,minY,minZ -> maxX,minY,maxZ (от смешанного к color2)
+        buffer.vertex(model, (float) maxX, (float) minY, (float) minZ).color(interpolateColor(highlightColor1, highlightColor2, 0.5f));
+        buffer.vertex(model, (float) maxX, (float) minY, (float) maxZ).color(highlightColor2);
 
-        buffer.vertex(model, (float) maxX, (float) minY, (float) maxZ).color(highlightColor);
-        buffer.vertex(model, (float) minX, (float) minY, (float) maxZ).color(highlightColor);
+        // maxX,minY,maxZ -> minX,minY,maxZ (от color2 к смешанному)
+        buffer.vertex(model, (float) maxX, (float) minY, (float) maxZ).color(highlightColor2);
+        buffer.vertex(model, (float) minX, (float) minY, (float) maxZ).color(interpolateColor(highlightColor1, highlightColor2, 0.5f));
 
-        buffer.vertex(model, (float) minX, (float) minY, (float) maxZ).color(highlightColor);
-        buffer.vertex(model, (float) minX, (float) minY, (float) minZ).color(highlightColor);
+        // minX,minY,maxZ -> minX,minY,minZ (от смешанного к color1)
+        buffer.vertex(model, (float) minX, (float) minY, (float) maxZ).color(interpolateColor(highlightColor1, highlightColor2, 0.5f));
+        buffer.vertex(model, (float) minX, (float) minY, (float) minZ).color(highlightColor1);
 
         // Верхняя грань (4 линии)
-        buffer.vertex(model, (float) minX, (float) maxY, (float) minZ).color(highlightColor);
-        buffer.vertex(model, (float) maxX, (float) maxY, (float) minZ).color(highlightColor);
+        // minX,maxY,minZ -> maxX,maxY,minZ (от смешанного к смешанному)
+        buffer.vertex(model, (float) minX, (float) maxY, (float) minZ).color(interpolateColor(highlightColor1, highlightColor2, 0.5f));
+        buffer.vertex(model, (float) maxX, (float) maxY, (float) minZ).color(interpolateColor(highlightColor1, highlightColor2, 0.5f));
 
-        buffer.vertex(model, (float) maxX, (float) maxY, (float) minZ).color(highlightColor);
-        buffer.vertex(model, (float) maxX, (float) maxY, (float) maxZ).color(highlightColor);
+        // maxX,maxY,minZ -> maxX,maxY,maxZ (от смешанного к color2)
+        buffer.vertex(model, (float) maxX, (float) maxY, (float) minZ).color(interpolateColor(highlightColor1, highlightColor2, 0.5f));
+        buffer.vertex(model, (float) maxX, (float) maxY, (float) maxZ).color(highlightColor2);
 
-        buffer.vertex(model, (float) maxX, (float) maxY, (float) maxZ).color(highlightColor);
-        buffer.vertex(model, (float) minX, (float) maxY, (float) maxZ).color(highlightColor);
+        // maxX,maxY,maxZ -> minX,maxY,maxZ (от color2 к смешанному)
+        buffer.vertex(model, (float) maxX, (float) maxY, (float) maxZ).color(highlightColor2);
+        buffer.vertex(model, (float) minX, (float) maxY, (float) maxZ).color(interpolateColor(highlightColor1, highlightColor2, 0.5f));
 
-        buffer.vertex(model, (float) minX, (float) maxY, (float) maxZ).color(highlightColor);
-        buffer.vertex(model, (float) minX, (float) maxY, (float) minZ).color(highlightColor);
+        // minX,maxY,maxZ -> minX,maxY,minZ (от смешанного к смешанному)
+        buffer.vertex(model, (float) minX, (float) maxY, (float) maxZ).color(interpolateColor(highlightColor1, highlightColor2, 0.5f));
+        buffer.vertex(model, (float) minX, (float) maxY, (float) minZ).color(interpolateColor(highlightColor1, highlightColor2, 0.5f));
 
         // Вертикальные ребра (4 линии)
-        buffer.vertex(model, (float) minX, (float) minY, (float) minZ).color(highlightColor);
-        buffer.vertex(model, (float) minX, (float) maxY, (float) minZ).color(highlightColor);
+        // minX,minY,minZ -> minX,maxY,minZ (от color1 к смешанному)
+        buffer.vertex(model, (float) minX, (float) minY, (float) minZ).color(highlightColor1);
+        buffer.vertex(model, (float) minX, (float) maxY, (float) minZ).color(interpolateColor(highlightColor1, highlightColor2, 0.5f));
 
-        buffer.vertex(model, (float) maxX, (float) minY, (float) minZ).color(highlightColor);
-        buffer.vertex(model, (float) maxX, (float) maxY, (float) minZ).color(highlightColor);
+        // maxX,minY,minZ -> maxX,maxY,minZ (от смешанного к смешанному)
+        buffer.vertex(model, (float) maxX, (float) minY, (float) minZ).color(interpolateColor(highlightColor1, highlightColor2, 0.5f));
+        buffer.vertex(model, (float) maxX, (float) maxY, (float) minZ).color(interpolateColor(highlightColor1, highlightColor2, 0.5f));
 
-        buffer.vertex(model, (float) maxX, (float) minY, (float) maxZ).color(highlightColor);
-        buffer.vertex(model, (float) maxX, (float) maxY, (float) maxZ).color(highlightColor);
+        // maxX,minY,maxZ -> maxX,maxY,maxZ (от color2 к color2)
+        buffer.vertex(model, (float) maxX, (float) minY, (float) maxZ).color(highlightColor2);
+        buffer.vertex(model, (float) maxX, (float) maxY, (float) maxZ).color(highlightColor2);
 
-        buffer.vertex(model, (float) minX, (float) minY, (float) maxZ).color(highlightColor);
-        buffer.vertex(model, (float) minX, (float) maxY, (float) maxZ).color(highlightColor);
+        // minX,minY,maxZ -> minX,maxY,maxZ (от смешанного к смешанному)
+        buffer.vertex(model, (float) minX, (float) minY, (float) maxZ).color(interpolateColor(highlightColor1, highlightColor2, 0.5f));
+        buffer.vertex(model, (float) minX, (float) maxY, (float) maxZ).color(interpolateColor(highlightColor1, highlightColor2, 0.5f));
+    }
+
+    private static int interpolateColor(int color1, int color2, float factor) {
+        int r1 = (color1 >> 16) & 0xFF;
+        int g1 = (color1 >> 8) & 0xFF;
+        int b1 = color1 & 0xFF;
+        int a1 = (color1 >> 24) & 0xFF;
+
+        int r2 = (color2 >> 16) & 0xFF;
+        int g2 = (color2 >> 8) & 0xFF;
+        int b2 = color2 & 0xFF;
+        int a2 = (color2 >> 24) & 0xFF;
+
+        int r = (int) (r1 + (r2 - r1) * factor);
+        int g = (int) (g1 + (g2 - g1) * factor);
+        int b = (int) (b1 + (b2 - b1) * factor);
+        int a = (int) (a1 + (a2 - a1) * factor);
+
+        return (a << 24) | (r << 16) | (g << 8) | b;
     }
 }

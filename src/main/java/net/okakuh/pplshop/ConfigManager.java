@@ -1,6 +1,8 @@
 // ConfigManager.java
 package net.okakuh.pplshop;
 
+import net.minecraft.util.Formatting;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.fabricmc.loader.api.FabricLoader;
@@ -23,7 +25,7 @@ public class ConfigManager {
         public String price_pattern = "\\d+\\s*а[а-яё]{1}";
         public String amount_pattern = "\\d+\\s*[а-яё]{2}";
         public List<Integer> y_coords = Arrays.asList(0, 3);
-        public String highlight_color = "LIME";
+        public List<String> highlight_colors = Arrays.asList("white", "yellow");
     }
 
     public static void loadConfig() {

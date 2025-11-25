@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import net.minecraft.command.argument.ColorArgumentType;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -14,6 +15,8 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.util.DyeColor;
 import org.lwjgl.glfw.GLFW;
+import net.minecraft.command.argument.ColorArgumentType;
+import net.minecraft.util.Formatting;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,14 +52,25 @@ public class PPLShopClient implements ClientModInitializer {
         return getConfig().amount_pattern;
     }
 
-    public static DyeColor getHighlightColor() {
-        try {
-            return DyeColor.valueOf(getConfig().highlight_color);
-        } catch (IllegalArgumentException e) {
-            return DyeColor.LIME;
-        }
+    public static Formatting getFirstHighlightColor() {
+        List<String> colors = getConfig().highlight_colors;
+        String firstColor = colors.size() > 0 ? colors.get(0) : "white";
+        return convertColorNameToFormatting(firstColor);
     }
 
+    public static Formatting getSecondHighlightColor() {
+        List<String> colors = getConfig().highlight_colors;
+        String secondColor = colors.size() > 1 ? colors.get(1) : "yellow";
+        return convertColorNameToFormatting(secondColor);
+    }
+
+    private static Formatting convertColorNameToFormatting(String colorName) {
+        try {
+            return Formatting.byName(colorName.toUpperCase());
+        } catch (Exception e) {
+            return Formatting.GREEN; // по умолчанию
+        }
+    }
     private static int currentStackSize = 0;
 
     // ==================== СИСТЕМА НАВИГАЦИИ ====================
@@ -235,38 +249,138 @@ public class PPLShopClient implements ClientModInitializer {
                                     )
                             )
                             .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("highlight_color")
-                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("value", StringArgumentType.string())
-                                            .executes(context -> {
-                                                String value = StringArgumentType.getString(context, "value").toUpperCase();
-                                                try {
-                                                    DyeColor color = DyeColor.valueOf(value);
-                                                    Config config = getConfig();
-                                                    config.highlight_color = value;
-                                                    setConfig(config);
-                                                    context.getSource().sendFeedback(Text.literal("§aУстановлен цвет подсветки: §e" + value));
-                                                } catch (IllegalArgumentException e) {
-                                                    context.getSource().sendFeedback(Text.literal("§cОшибка: неверный цвет. Допустимые значения: " +
-                                                            Arrays.toString(DyeColor.values())));
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("color1", StringArgumentType.string())
+                                            .suggests((context, builder) -> {
+                                                // Саджесты для первого цвета
+                                                for (Formatting formatting : Formatting.values()) {
+                                                    if (formatting.isColor()) {
+                                                        builder.suggest(formatting.getName());
+                                                    }
                                                 }
-                                                return 1;
+                                                return builder.buildFuture();
                                             })
+                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("color2", StringArgumentType.string())
+                                                    .suggests((context, builder) -> {
+                                                        // Саджесты для второго цвета
+                                                        for (Formatting formatting : Formatting.values()) {
+                                                            if (formatting.isColor()) {
+                                                                builder.suggest(formatting.getName());
+                                                            }
+                                                        }
+                                                        return builder.buildFuture();
+                                                    })
+                                                    .executes(context -> {
+                                                        String color1Name = StringArgumentType.getString(context, "color1").toLowerCase();
+                                                        String color2Name = StringArgumentType.getString(context, "color2").toLowerCase();
+
+                                                        // Валидируем цвета
+                                                        Formatting color1 = null;
+                                                        Formatting color2 = null;
+
+                                                        for (Formatting formatting : Formatting.values()) {
+                                                            if (formatting.isColor() && formatting.getName().equalsIgnoreCase(color1Name)) {
+                                                                color1 = formatting;
+                                                            }
+                                                            if (formatting.isColor() && formatting.getName().equalsIgnoreCase(color2Name)) {
+                                                                color2 = formatting;
+                                                            }
+                                                        }
+
+                                                        if (color1 != null && color2 != null) {
+                                                            Config config = getConfig();
+                                                            config.highlight_colors = Arrays.asList(color1.getName(), color2.getName());
+                                                            setConfig(config);
+
+                                                            context.getSource().sendFeedback(Text.literal("§aУстановлены цвета подсветки: ")
+                                                                    .append(Text.literal(color1.getName()).formatted(color1))
+                                                                    .append(Text.literal(" §f(Цвет 1) и "))
+                                                                    .append(Text.literal(color2.getName()).formatted(color2))
+                                                                    .append(Text.literal(" §f(Цвет 2)")));
+                                                        } else {
+                                                            // Показываем доступные цвета в ошибке
+                                                            StringBuilder availableColors = new StringBuilder();
+                                                            for (Formatting formatting : Formatting.values()) {
+                                                                if (formatting.isColor()) {
+                                                                    if (availableColors.length() > 0) availableColors.append(", ");
+                                                                    availableColors.append(formatting.getName());
+                                                                }
+                                                            }
+
+                                                            context.getSource().sendFeedback(Text.literal("§cОшибка: неверные цвета. Допустимые значения: §e" + availableColors));
+                                                        }
+                                                        return 1;
+                                                    })
+                                            )
                                     )
                             )
                             .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("show")
                                     .executes(context -> {
                                         Config config = getConfig();
+                                        Formatting color1 = convertColorNameToFormatting(config.highlight_colors.get(0));
+                                        Formatting color2 = convertColorNameToFormatting(config.highlight_colors.get(1));
+
                                         context.getSource().sendFeedback(Text.literal("§6=== НАСТРОЙКИ PPLSHOP ==="));
                                         context.getSource().sendFeedback(Text.literal("§aРадиус по умолчанию: §e" + config.default_radius));
                                         context.getSource().sendFeedback(Text.literal("§aСтак по умолчанию: §e" + config.default_stack));
                                         context.getSource().sendFeedback(Text.literal("§aПаттерн цены: §e" + config.price_pattern));
                                         context.getSource().sendFeedback(Text.literal("§aПаттерн количества: §e" + config.amount_pattern));
                                         context.getSource().sendFeedback(Text.literal("§aY координаты: §e" + config.y_coords));
-                                        context.getSource().sendFeedback(Text.literal("§aЦвет подсветки: §e" + config.highlight_color));
+                                        context.getSource().sendFeedback(Text.literal("§aЦвета подсветки: ")
+                                                .append(Text.literal(config.highlight_colors.get(0)).formatted(color1))
+                                                .append(Text.literal(" §fи "))
+                                                .append(Text.literal(config.highlight_colors.get(1)).formatted(color2)));
                                         return 1;
                                     })
                             )
             );
         });
+    }
+
+    private static DyeColor formattingToDyeColor(Formatting formatting) {
+        if (formatting == null) return DyeColor.LIME;
+
+        switch (formatting) {
+            case WHITE: return DyeColor.WHITE;
+            case YELLOW: return DyeColor.YELLOW;
+            case LIGHT_PURPLE: return DyeColor.MAGENTA;
+            case RED: return DyeColor.RED;
+            case AQUA: return DyeColor.CYAN;
+            case GREEN: return DyeColor.GREEN;
+            case BLUE: return DyeColor.BLUE;
+            case DARK_GRAY: return DyeColor.GRAY;
+            case GRAY: return DyeColor.LIGHT_GRAY;
+            case GOLD: return DyeColor.ORANGE;
+            case DARK_PURPLE: return DyeColor.PURPLE;
+            case DARK_RED: return DyeColor.BROWN;
+            case DARK_AQUA: return DyeColor.CYAN;
+            case DARK_GREEN: return DyeColor.GREEN;
+            case DARK_BLUE: return DyeColor.BLUE;
+            case BLACK: return DyeColor.BLACK;
+            default: return DyeColor.LIME;
+        }
+    }
+
+    private static int convertColorNameToDecimal(String colorName) {
+        switch (colorName.toLowerCase()) {
+            case "black": return 0x000000;
+            case "dark_blue": return 0x0000AA;
+            case "dark_green": return 0x00AA00;
+            case "dark_aqua": return 0x00AAAA;
+            case "dark_red": return 0xAA0000;
+            case "dark_purple": return 0xAA00AA;
+            case "gold": return 0xFFAA00;
+            case "gray": return 0xAAAAAA;
+            case "dark_gray": return 0x555555;
+            case "blue": return 0x5555FF;
+            case "green": return 0x55FF55;
+            case "aqua": return 0x55FFFF;
+            case "red": return 0xFF5555;
+            case "light_purple": return 0xFF55FF;
+            case "yellow": return 0xFFFF55;
+            case "white": return 0xFFFFFF;
+            case "reset":
+            default: return 0x55FF55; // green по умолчанию
+        }
     }
 
     private static void handleKeyNavigation(net.minecraft.client.MinecraftClient client) {
@@ -339,8 +453,11 @@ public class PPLShopClient implements ClientModInitializer {
         Double currentPrice = currentPriceKeys.get(currentGroupIndex);
         List<BlockPos> currentGroup = currentSortedSigns.get(currentPrice);
 
-        // Используем цвет из конфига
-        BlockHighlighter.highlightBlocks(currentGroup, getHighlightColor());
+        // Конвертируем Formatting в DyeColor для BlockHighlighter
+        DyeColor firstColor = formattingToDyeColor(getFirstHighlightColor());
+        DyeColor secondColor = formattingToDyeColor(getSecondHighlightColor());
+
+        BlockHighlighter.highlightBlocks(currentGroup, firstColor, secondColor);
 
         if (net.minecraft.client.MinecraftClient.getInstance().player != null) {
             String categoryMessage = "§aКатегория: §e" + parseMessage(currentPrice, currentStackSize);
