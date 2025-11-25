@@ -1,47 +1,24 @@
 package net.okakuh.pplshop;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.DepthTestFunction;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.RenderPhase;
 import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.VertexFormats;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.DyeColor;
 import net.minecraft.util.math.BlockPos;
 import org.joml.Matrix4f;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.OptionalDouble;
-
-import static net.minecraft.client.gl.RenderPipelines.POSITION_COLOR_SNIPPET;
 
 public class BlockHighlighter {
-    private static final RenderLayer.MultiPhase BLOCK_HIGHLIGHT = RenderLayer.of(
-            "block_highlight_no_depth",
-            1536,
-            RenderPipelines.register(
-                    RenderPipeline.builder(POSITION_COLOR_SNIPPET)
-                            .withLocation("pipeline/block_highlight")
-                            .withVertexShader("core/position_color")
-                            .withFragmentShader("core/position_color")
-                            .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
-                            .withCull(false)
-                            .withVertexFormat(VertexFormats.POSITION_COLOR, VertexFormat.DrawMode.DEBUG_LINES)
-                            .build()
-            ),
-            RenderLayer.MultiPhaseParameters.builder().lineWidth(new RenderPhase.LineWidth(OptionalDouble.of(3.0))).build(false)
-    );
-
     private static List<BlockPos> highlightedBlocks = new ArrayList<>();
-    private static int highlightColor = 0xFFFFFFFF;
+
+    private static int highlightColor = 0xFFFF00FF; // Розовый цвет
 
     public static void highlightBlocks(List<BlockPos> blocks, DyeColor color) {
         highlightedBlocks = new ArrayList<>(blocks);
-        highlightColor = color.getEntityColor() | 0xFF000000;
+        highlightColor = color.getEntityColor() | 0xFF000000; // Полностью непрозрачный розовый
     }
 
     public static void clearHighlights() {
@@ -51,24 +28,33 @@ public class BlockHighlighter {
     public static void render(WorldRenderContext context) {
         if (highlightedBlocks.isEmpty()) return;
 
-        var stack = context.matrixStack();
+        MatrixStack stack = context.matrixStack();
         var bufferSource = context.consumers();
         var cameraPos = context.camera().getPos();
 
         stack.push();
         stack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
-        final Matrix4f model = stack.peek().getPositionMatrix();
 
-        var buffer = bufferSource.getBuffer(BLOCK_HIGHLIGHT);
+        // Получаем компоненты цвета
+        float red = (highlightColor >> 16 & 255) / 255.0f;
+        float green = (highlightColor >> 8 & 255) / 255.0f;
+        float blue = (highlightColor & 255) / 255.0f;
+        float alpha = (highlightColor >> 24 & 255) / 255.0f;
+
+        Matrix4f matrix = stack.peek().getPositionMatrix();
+
+        // Используем debug quads для заливки граней
+        VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderLayer.getDebugQuads());
 
         for (BlockPos blockPos : highlightedBlocks) {
-            renderBlockOutline(model, buffer, blockPos);
+            renderBlockFaces(matrix, vertexConsumer, blockPos, red, green, blue, alpha);
         }
 
         stack.pop();
     }
 
-    private static void renderBlockOutline(Matrix4f model, VertexConsumer buffer, BlockPos pos) {
+    private static void renderBlockFaces(Matrix4f matrix, VertexConsumer vertexConsumer, BlockPos pos,
+                                         float red, float green, float blue, float alpha) {
         double minX = pos.getX();
         double minY = pos.getY();
         double minZ = pos.getZ();
@@ -76,45 +62,42 @@ public class BlockHighlighter {
         double maxY = pos.getY() + 1;
         double maxZ = pos.getZ() + 1;
 
-        // 12 линий куба (все грани)
+        // Рисуем все 6 граней куба как залитые квады
 
-        // Нижняя грань (4 линии)
-        buffer.vertex(model, (float) minX, (float) minY, (float) minZ).color(highlightColor);
-        buffer.vertex(model, (float) maxX, (float) minY, (float) minZ).color(highlightColor);
+        // Нижняя грань (Y-)
+        vertexConsumer.vertex(matrix, (float) minX, (float) minY, (float) minZ).color(red, green, blue, alpha);
+        vertexConsumer.vertex(matrix, (float) maxX, (float) minY, (float) minZ).color(red, green, blue, alpha);
+        vertexConsumer.vertex(matrix, (float) maxX, (float) minY, (float) maxZ).color(red, green, blue, alpha);
+        vertexConsumer.vertex(matrix, (float) minX, (float) minY, (float) maxZ).color(red, green, blue, alpha);
 
-        buffer.vertex(model, (float) maxX, (float) minY, (float) minZ).color(highlightColor);
-        buffer.vertex(model, (float) maxX, (float) minY, (float) maxZ).color(highlightColor);
+        // Верхняя грань (Y+)
+        vertexConsumer.vertex(matrix, (float) minX, (float) maxY, (float) minZ).color(red, green, blue, alpha);
+        vertexConsumer.vertex(matrix, (float) minX, (float) maxY, (float) maxZ).color(red, green, blue, alpha);
+        vertexConsumer.vertex(matrix, (float) maxX, (float) maxY, (float) maxZ).color(red, green, blue, alpha);
+        vertexConsumer.vertex(matrix, (float) maxX, (float) maxY, (float) minZ).color(red, green, blue, alpha);
 
-        buffer.vertex(model, (float) maxX, (float) minY, (float) maxZ).color(highlightColor);
-        buffer.vertex(model, (float) minX, (float) minY, (float) maxZ).color(highlightColor);
+        // Северная грань (Z-)
+        vertexConsumer.vertex(matrix, (float) minX, (float) minY, (float) minZ).color(red, green, blue, alpha);
+        vertexConsumer.vertex(matrix, (float) minX, (float) maxY, (float) minZ).color(red, green, blue, alpha);
+        vertexConsumer.vertex(matrix, (float) maxX, (float) maxY, (float) minZ).color(red, green, blue, alpha);
+        vertexConsumer.vertex(matrix, (float) maxX, (float) minY, (float) minZ).color(red, green, blue, alpha);
 
-        buffer.vertex(model, (float) minX, (float) minY, (float) maxZ).color(highlightColor);
-        buffer.vertex(model, (float) minX, (float) minY, (float) minZ).color(highlightColor);
+        // Южная грань (Z+)
+        vertexConsumer.vertex(matrix, (float) minX, (float) minY, (float) maxZ).color(red, green, blue, alpha);
+        vertexConsumer.vertex(matrix, (float) maxX, (float) minY, (float) maxZ).color(red, green, blue, alpha);
+        vertexConsumer.vertex(matrix, (float) maxX, (float) maxY, (float) maxZ).color(red, green, blue, alpha);
+        vertexConsumer.vertex(matrix, (float) minX, (float) maxY, (float) maxZ).color(red, green, blue, alpha);
 
-        // Верхняя грань (4 линии)
-        buffer.vertex(model, (float) minX, (float) maxY, (float) minZ).color(highlightColor);
-        buffer.vertex(model, (float) maxX, (float) maxY, (float) minZ).color(highlightColor);
+        // Западная грань (X-)
+        vertexConsumer.vertex(matrix, (float) minX, (float) minY, (float) minZ).color(red, green, blue, alpha);
+        vertexConsumer.vertex(matrix, (float) minX, (float) minY, (float) maxZ).color(red, green, blue, alpha);
+        vertexConsumer.vertex(matrix, (float) minX, (float) maxY, (float) maxZ).color(red, green, blue, alpha);
+        vertexConsumer.vertex(matrix, (float) minX, (float) maxY, (float) minZ).color(red, green, blue, alpha);
 
-        buffer.vertex(model, (float) maxX, (float) maxY, (float) minZ).color(highlightColor);
-        buffer.vertex(model, (float) maxX, (float) maxY, (float) maxZ).color(highlightColor);
-
-        buffer.vertex(model, (float) maxX, (float) maxY, (float) maxZ).color(highlightColor);
-        buffer.vertex(model, (float) minX, (float) maxY, (float) maxZ).color(highlightColor);
-
-        buffer.vertex(model, (float) minX, (float) maxY, (float) maxZ).color(highlightColor);
-        buffer.vertex(model, (float) minX, (float) maxY, (float) minZ).color(highlightColor);
-
-        // Вертикальные ребра (4 линии)
-        buffer.vertex(model, (float) minX, (float) minY, (float) minZ).color(highlightColor);
-        buffer.vertex(model, (float) minX, (float) maxY, (float) minZ).color(highlightColor);
-
-        buffer.vertex(model, (float) maxX, (float) minY, (float) minZ).color(highlightColor);
-        buffer.vertex(model, (float) maxX, (float) maxY, (float) minZ).color(highlightColor);
-
-        buffer.vertex(model, (float) maxX, (float) minY, (float) maxZ).color(highlightColor);
-        buffer.vertex(model, (float) maxX, (float) maxY, (float) maxZ).color(highlightColor);
-
-        buffer.vertex(model, (float) minX, (float) minY, (float) maxZ).color(highlightColor);
-        buffer.vertex(model, (float) minX, (float) maxY, (float) maxZ).color(highlightColor);
+        // Восточная грань (X+)
+        vertexConsumer.vertex(matrix, (float) maxX, (float) minY, (float) minZ).color(red, green, blue, alpha);
+        vertexConsumer.vertex(matrix, (float) maxX, (float) maxY, (float) minZ).color(red, green, blue, alpha);
+        vertexConsumer.vertex(matrix, (float) maxX, (float) maxY, (float) maxZ).color(red, green, blue, alpha);
+        vertexConsumer.vertex(matrix, (float) maxX, (float) minY, (float) maxZ).color(red, green, blue, alpha);
     }
 }

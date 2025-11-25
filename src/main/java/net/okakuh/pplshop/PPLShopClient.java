@@ -45,6 +45,9 @@ public class PPLShopClient implements ClientModInitializer {
     public static final String PRICE_PATTERN = "\\d+\\s*а[а-яё]{1}";
     public static final String AMOUNT_PATTERN = "\\d+\\s*[а-яё]{2}";
 
+    // Настройки подсветки (фиксированные)
+    public static final DyeColor HIGHLIGHT_COLOR = DyeColor.PINK; // Розовый цвет для заливки
+
     private static int currentStackSize = 0;
 
     // ==================== СИСТЕМА НАВИГАЦИИ ====================
@@ -67,7 +70,7 @@ public class PPLShopClient implements ClientModInitializer {
             BlockHighlighter.render(context);
         });
 
-        // Обработчик тиков для навигаци
+        // Обработчик тиков для навигации
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null || client.currentScreen != null) return;
             handleKeyNavigation(client);
@@ -185,12 +188,12 @@ public class PPLShopClient implements ClientModInitializer {
         Double currentPrice = currentPriceKeys.get(currentGroupIndex);
         List<BlockPos> currentGroup = currentSortedSigns.get(currentPrice);
 
-        // Подсвечиваем таблички текущей группы
-        BlockHighlighter.highlightBlocks(currentGroup, DyeColor.LIME);
+        // Подсвечиваем таблички текущей группы розовым цветом
+        BlockHighlighter.highlightBlocks(currentGroup, HIGHLIGHT_COLOR);
 
         // Показываем категорию над хотбаром с использованием parseMessage
         if (net.minecraft.client.MinecraftClient.getInstance().player != null) {
-            String categoryMessage = "§aКатегория: §e" + parseMessage(currentPrice, currentStackSize); // ИСПОЛЬЗУЕМ parseMessage
+            String categoryMessage = "§aКатегория: §e" + parseMessage(currentPrice, currentStackSize);
             net.minecraft.client.MinecraftClient.getInstance().player.sendMessage(
                     Text.literal(categoryMessage),
                     true // overlay message
@@ -274,7 +277,7 @@ public class PPLShopClient implements ClientModInitializer {
         // Выводим инструкции по навигации в чат
         source.sendFeedback(Text.literal(""));
         source.sendFeedback(Text.literal("§6=== НАВИГАЦИЯ ==="));
-        source.sendFeedback(Text.literal("§eСтрелки: ВВЕРХ/ВНИЗ §7- навигация по цен. категориям")); // МЕНЯЕМ ТЕКСТ
+        source.sendFeedback(Text.literal("§eСтрелки: ВВЕРХ/ВНИЗ §7- навигация по цен. категориям"));
         source.sendFeedback(Text.literal("§cBackspace §7- завершить навигацию"));
         source.sendFeedback(Text.literal("§6=================="));
 
