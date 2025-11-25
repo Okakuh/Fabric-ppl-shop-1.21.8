@@ -13,6 +13,7 @@ import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.util.DyeColor;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +27,6 @@ public class PPLShopClient implements ClientModInitializer {
     // ==================== НАСТРАИВАЕМЫЕ ПЕРЕМЕННЫЕ ====================
 
     // Параметры по умолчанию для команды /shop
-    public static final int DEFAULT_STACK_SIZE = 64;
     public static final int DEFAULT_SEARCH_RADIUS = 40;
 
     // Настройки поиска табличек
@@ -54,9 +54,12 @@ public class PPLShopClient implements ClientModInitializer {
     private static boolean navigationActive = false;
 
     // Флаги для защиты от множественных нажатий
+    private static boolean wasAltWPressed = false;
+    private static boolean wasAltSPressed = false;
     private static boolean wasUpPressed = false;
     private static boolean wasDownPressed = false;
-    private static boolean wasBackspacePressed = false;
+    private static boolean wasMiddleMousePressed = false;
+
 
     // ==================== КОНЕЦ НАСТРАИВАЕМЫХ ПЕРЕМЕННЫХ ====================
 
@@ -145,28 +148,47 @@ public class PPLShopClient implements ClientModInitializer {
 
         long window = client.getWindow().getHandle();
 
-        // Стрелка ВНИЗ - следующая группа
-        if (InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_DOWN) && !wasDownPressed) {
-            wasDownPressed = true;
+        // Alt + W - следующая группа
+        boolean altPressed = InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_LEFT_ALT) ||
+                InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_RIGHT_ALT);
+
+        if (altPressed && InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_W) && !wasAltWPressed) {
+            wasAltWPressed = true;
             nextGroup();
-        } else if (!InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_DOWN)) {
-            wasDownPressed = false;
+        } else if (!InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_W)) {
+            wasAltWPressed = false;
         }
 
-        // Стрелка ВВЕРХ - предыдущая группа
+        // Alt + S - предыдущая группа
+        if (altPressed && InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_S) && !wasAltSPressed) {
+            wasAltSPressed = true;
+            previousGroup();
+        } else if (!InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_S)) {
+            wasAltSPressed = false;
+        }
+
+        // Стрелка ВВЕРХ - следующая группа (без Alt)
         if (InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_UP) && !wasUpPressed) {
             wasUpPressed = true;
-            previousGroup();
+            nextGroup();
         } else if (!InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_UP)) {
             wasUpPressed = false;
         }
 
-        // Backspace - завершить навигацию
-        if (InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_BACKSPACE) && !wasBackspacePressed) {
-            wasBackspacePressed = true;
+        // Стрелка ВНИЗ - предыдущая группа (без Alt)
+        if (InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_DOWN) && !wasDownPressed) {
+            wasDownPressed = true;
+            previousGroup();
+        } else if (!InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_DOWN)) {
+            wasDownPressed = false;
+        }
+
+        // Средняя кнопка мыши для остановки навигации
+        if (GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_MIDDLE) == GLFW.GLFW_PRESS && !wasMiddleMousePressed) {
+            wasMiddleMousePressed = true;
             stopNavigation();
-        } else if (!InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_BACKSPACE)) {
-            wasBackspacePressed = false;
+        } else if (GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_MIDDLE) == GLFW.GLFW_RELEASE) {
+            wasMiddleMousePressed = false;
         }
     }
 
