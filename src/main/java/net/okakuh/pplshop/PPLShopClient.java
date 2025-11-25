@@ -31,10 +31,7 @@ public class PPLShopClient implements ClientModInitializer {
 
     // Настройки поиска табличек
     public static final int MIN_Y_SEARCH = 0;      // Минимальная Y координата для поиска
-    public static final int MAX_Y_SEARCH = 3;      // Максимальная Y координата для поиска
-
-    // Настройки проверки табличек
-    public static final boolean SEARCH_FRONT_SIDE = true;  // Искать на передней стороне таблички
+    public static final int MAX_Y_SEARCH = 3;      // Максимальная Y координата для поиск
 
     // Ограничения параметров
     public static final int MIN_STACK_SIZE = 1;
@@ -383,7 +380,7 @@ public class PPLShopClient implements ClientModInitializer {
         String[] text = new String[4];
         for (int i = 0; i < 4; i++) {
             // Используем настраиваемую сторону таблички
-            Text line = sign.getText(SEARCH_FRONT_SIDE).getMessage(i, false);
+            Text line = sign.getText(true).getMessage(i, false);
             text[i] = line.getString().trim();
         }
         // Объединяем все строки в один текст для поиска
@@ -546,7 +543,7 @@ public class PPLShopClient implements ClientModInitializer {
     private static String[] getFrontTextArray(SignBlockEntity sign) {
         String[] text = new String[4];
         for (int i = 0; i < 4; i++) {
-            Text line = sign.getText(SEARCH_FRONT_SIDE).getMessage(i, false);
+            Text line = sign.getText(true).getMessage(i, false);
             text[i] = line.getString().trim();
         }
         return text;
