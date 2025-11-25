@@ -21,26 +21,41 @@ import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.Arrays;
+
+import static net.okakuh.pplshop.ConfigManager.*;
 
 public class PPLShopClient implements ClientModInitializer {
 
-    // ==================== НАСТРАИВАЕМЫЕ ПЕРЕМЕННЫЕ ====================
+    public static int getDefaultSearchRadius() {
+        return getConfig().default_radius;
+    }
 
-    // Параметры по умолчанию для команды /shop
-    public static final int DEFAULT_SEARCH_RADIUS = 40;
+    public static int getMinYSearch() {
+        List<Integer> yCoords = getConfig().y_coords;
+        return yCoords.size() > 0 ? yCoords.get(0) : 0;
+    }
 
-    // Настройки поиска табличек
-    public static final int MIN_Y_SEARCH = 0;      // Минимальная Y координата для поиска
-    public static final int MAX_Y_SEARCH = 3;      // Максимальная Y координата для поиск
+    public static int getMaxYSearch() {
+        List<Integer> yCoords = getConfig().y_coords;
+        return yCoords.size() > 1 ? yCoords.get(1) : 3;
+    }
 
-    // Ограничения параметров
-    public static final int MIN_STACK_SIZE = 1;
-    public static final int MAX_STACK_SIZE = 64;
-    public static final int MIN_RADIUS = 1;
+    public static String getPricePattern() {
+        return getConfig().price_pattern;
+    }
 
-    // Паттерны для парсинга цен и количества
-    public static final String PRICE_PATTERN = "\\d+\\s*а[а-яё]{1}";
-    public static final String AMOUNT_PATTERN = "\\d+\\s*[а-яё]{2}";
+    public static String getAmountPattern() {
+        return getConfig().amount_pattern;
+    }
+
+    public static DyeColor getHighlightColor() {
+        try {
+            return DyeColor.valueOf(getConfig().highlight_color);
+        } catch (IllegalArgumentException e) {
+            return DyeColor.LIME;
+        }
+    }
 
     private static int currentStackSize = 0;
 
@@ -57,32 +72,35 @@ public class PPLShopClient implements ClientModInitializer {
     private static boolean wasDownPressed = false;
     private static boolean wasMiddleMousePressed = false;
 
-
-    // ==================== КОНЕЦ НАСТРАИВАЕМЫХ ПЕРЕМЕННЫХ ====================
-
     @Override
     public void onInitializeClient() {
+        // Загружаем конфиг при запуске
+        loadConfig();
+
         // Регистрируем рендер подсветки
         WorldRenderEvents.AFTER_TRANSLUCENT.register(context -> {
             BlockHighlighter.render(context);
         });
 
-        // Обработчик тиков для навигаци
+        // Обработчик тиков для навигации
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null || client.currentScreen != null) return;
             handleKeyNavigation(client);
         });
 
+        // Регистрируем команды настроек
+        registerSettingCommands();
+
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             // Команда /shop stack search_pattern
             dispatcher.register(
                     net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("shop")
-                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("stack", IntegerArgumentType.integer(MIN_STACK_SIZE, MAX_STACK_SIZE))
+                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("stack", IntegerArgumentType.integer(1, 64)) // константа
                                     .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("search_pattern", StringArgumentType.greedyString())
                                             .executes(context -> {
                                                 int stack = IntegerArgumentType.getInteger(context, "stack");
                                                 String searchPattern = StringArgumentType.getString(context, "search_pattern");
-                                                int radius = DEFAULT_SEARCH_RADIUS;
+                                                int radius = getDefaultSearchRadius();
                                                 return executeShop(context, searchPattern, stack, radius, false);
                                             })
                                     )
@@ -92,8 +110,8 @@ public class PPLShopClient implements ClientModInitializer {
             // Команда /shop_radius radius stack search_pattern
             dispatcher.register(
                     net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("shop_radius")
-                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("radius", IntegerArgumentType.integer(MIN_RADIUS))
-                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("stack", IntegerArgumentType.integer(MIN_STACK_SIZE, MAX_STACK_SIZE))
+                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("radius", IntegerArgumentType.integer(1)) // константа
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("stack", IntegerArgumentType.integer(1, 64)) // константа
                                             .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("search_pattern", StringArgumentType.greedyString())
                                                     .executes(context -> {
                                                         int radius = IntegerArgumentType.getInteger(context, "radius");
@@ -109,12 +127,12 @@ public class PPLShopClient implements ClientModInitializer {
             // Команда /shop_rgx stack regex_pattern
             dispatcher.register(
                     net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("shop_rgx")
-                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("stack", IntegerArgumentType.integer(MIN_STACK_SIZE, MAX_STACK_SIZE))
+                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("stack", IntegerArgumentType.integer(1, 64)) // константа
                                     .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("regex_pattern", StringArgumentType.greedyString())
                                             .executes(context -> {
                                                 int stack = IntegerArgumentType.getInteger(context, "stack");
                                                 String regexPattern = StringArgumentType.getString(context, "regex_pattern");
-                                                int radius = DEFAULT_SEARCH_RADIUS;
+                                                int radius = getDefaultSearchRadius();
                                                 return executeShop(context, regexPattern, stack, radius, true);
                                             })
                                     )
@@ -124,8 +142,8 @@ public class PPLShopClient implements ClientModInitializer {
             // Команда /shop_rgx_radius radius stack regex_pattern
             dispatcher.register(
                     net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("shop_rgx_radius")
-                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("radius", IntegerArgumentType.integer(MIN_RADIUS))
-                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("stack", IntegerArgumentType.integer(MIN_STACK_SIZE, MAX_STACK_SIZE))
+                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("radius", IntegerArgumentType.integer(1)) // константа
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("stack", IntegerArgumentType.integer(1, 64)) // константа
                                             .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("regex_pattern", StringArgumentType.greedyString())
                                                     .executes(context -> {
                                                         int radius = IntegerArgumentType.getInteger(context, "radius");
@@ -135,6 +153,117 @@ public class PPLShopClient implements ClientModInitializer {
                                                     })
                                             )
                                     )
+                            )
+            );
+        });
+    }
+
+    private static void registerSettingCommands() {
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+            dispatcher.register(
+                    net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("shop_settings")
+                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("default")
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("radius")
+                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("value", IntegerArgumentType.integer(1))
+                                                    .executes(context -> {
+                                                        int value = IntegerArgumentType.getInteger(context, "value");
+                                                        Config config = getConfig();
+                                                        config.default_radius = value;
+                                                        setConfig(config);
+                                                        context.getSource().sendFeedback(Text.literal("§aУстановлен радиус по умолчанию: §e" + value));
+                                                        return 1;
+                                                    })
+                                            )
+                                    )
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("stack")
+                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("value", IntegerArgumentType.integer(1, 64))
+                                                    .executes(context -> {
+                                                        int value = IntegerArgumentType.getInteger(context, "value");
+                                                        Config config = getConfig();
+                                                        config.default_stack = value;
+                                                        setConfig(config);
+                                                        context.getSource().sendFeedback(Text.literal("§aУстановлен стак по умолчанию: §e" + value));
+                                                        return 1;
+                                                    })
+                                            )
+                                    )
+                            )
+                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("price_pattern")
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("value", StringArgumentType.greedyString())
+                                            .executes(context -> {
+                                                String value = StringArgumentType.getString(context, "value");
+                                                Config config = getConfig();
+                                                config.price_pattern = value;
+                                                setConfig(config);
+                                                context.getSource().sendFeedback(Text.literal("§aУстановлен паттерн цены: §e" + value));
+                                                return 1;
+                                            })
+                                    )
+                            )
+                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("amount_pattern")
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("value", StringArgumentType.greedyString())
+                                            .executes(context -> {
+                                                String value = StringArgumentType.getString(context, "value");
+                                                Config config = getConfig();
+                                                config.amount_pattern = value;
+                                                setConfig(config);
+                                                context.getSource().sendFeedback(Text.literal("§aУстановлен паттерн количества: §e" + value));
+                                                return 1;
+                                            })
+                                    )
+                            )
+                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("y_coords")
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("values", StringArgumentType.greedyString())
+                                            .executes(context -> {
+                                                String valuesStr = StringArgumentType.getString(context, "values");
+                                                try {
+                                                    String[] parts = valuesStr.split("\\s+");
+                                                    List<Integer> yCoords = new ArrayList<>();
+                                                    for (String part : parts) {
+                                                        yCoords.add(Integer.parseInt(part));
+                                                    }
+
+                                                    Config config = getConfig();
+                                                    config.y_coords = yCoords;
+                                                    setConfig(config);
+                                                    context.getSource().sendFeedback(Text.literal("§aУстановлены Y координаты: §e" + yCoords));
+                                                } catch (NumberFormatException e) {
+                                                    context.getSource().sendFeedback(Text.literal("§cОшибка: неверный формат чисел"));
+                                                }
+                                                return 1;
+                                            })
+                                    )
+                            )
+                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("highlight_color")
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("value", StringArgumentType.string())
+                                            .executes(context -> {
+                                                String value = StringArgumentType.getString(context, "value").toUpperCase();
+                                                try {
+                                                    DyeColor color = DyeColor.valueOf(value);
+                                                    Config config = getConfig();
+                                                    config.highlight_color = value;
+                                                    setConfig(config);
+                                                    context.getSource().sendFeedback(Text.literal("§aУстановлен цвет подсветки: §e" + value));
+                                                } catch (IllegalArgumentException e) {
+                                                    context.getSource().sendFeedback(Text.literal("§cОшибка: неверный цвет. Допустимые значения: " +
+                                                            Arrays.toString(DyeColor.values())));
+                                                }
+                                                return 1;
+                                            })
+                                    )
+                            )
+                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("show")
+                                    .executes(context -> {
+                                        Config config = getConfig();
+                                        context.getSource().sendFeedback(Text.literal("§6=== НАСТРОЙКИ PPLSHOP ==="));
+                                        context.getSource().sendFeedback(Text.literal("§aРадиус по умолчанию: §e" + config.default_radius));
+                                        context.getSource().sendFeedback(Text.literal("§aСтак по умолчанию: §e" + config.default_stack));
+                                        context.getSource().sendFeedback(Text.literal("§aПаттерн цены: §e" + config.price_pattern));
+                                        context.getSource().sendFeedback(Text.literal("§aПаттерн количества: §e" + config.amount_pattern));
+                                        context.getSource().sendFeedback(Text.literal("§aY координаты: §e" + config.y_coords));
+                                        context.getSource().sendFeedback(Text.literal("§aЦвет подсветки: §e" + config.highlight_color));
+                                        return 1;
+                                    })
                             )
             );
         });
@@ -210,15 +339,14 @@ public class PPLShopClient implements ClientModInitializer {
         Double currentPrice = currentPriceKeys.get(currentGroupIndex);
         List<BlockPos> currentGroup = currentSortedSigns.get(currentPrice);
 
-        // Подсвечиваем таблички текущей группы
-        BlockHighlighter.highlightBlocks(currentGroup, DyeColor.LIME);
+        // Используем цвет из конфига
+        BlockHighlighter.highlightBlocks(currentGroup, getHighlightColor());
 
-        // Показываем категорию над хотбаром с использованием parseMessage
         if (net.minecraft.client.MinecraftClient.getInstance().player != null) {
-            String categoryMessage = "§aКатегория: §e" + parseMessage(currentPrice, currentStackSize); // ИСПОЛЬЗУЕМ parseMessage
+            String categoryMessage = "§aКатегория: §e" + parseMessage(currentPrice, currentStackSize);
             net.minecraft.client.MinecraftClient.getInstance().player.sendMessage(
                     Text.literal(categoryMessage),
-                    true // overlay message
+                    true
             );
         }
     }
@@ -315,29 +443,24 @@ public class PPLShopClient implements ClientModInitializer {
 
     private static List<BlockPos> findSignsAroundPlayer(net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource source, int radius, String pattern, boolean useRegex) {
         List<BlockPos> foundSigns = new ArrayList<>();
-
-        // Получаем мир и позицию игрока
         World world = source.getWorld();
         BlockPos playerPos = source.getPlayer().getBlockPos();
 
-        // Определяем границы поиска
         int minX = playerPos.getX() - radius;
         int maxX = playerPos.getX() + radius;
         int minZ = playerPos.getZ() - radius;
         int maxZ = playerPos.getZ() + radius;
 
-        // Используем настраиваемые Y координаты
-        int minY = MIN_Y_SEARCH;
-        int maxY = MAX_Y_SEARCH;
+        // Используем настраиваемые Y координаты из конфига
+        int minY = getMinYSearch();
+        int maxY = getMaxYSearch();
 
-        // Ищем таблички в указанной области
         for (int x = minX; x <= maxX; x++) {
             for (int z = minZ; z <= maxZ; z++) {
                 for (int y = minY; y <= maxY; y++) {
                     BlockPos pos = new BlockPos(x, y, z);
                     BlockEntity blockEntity = world.getBlockEntity(pos);
 
-                    // Проверяем, является ли блок табличкой и соответствует ли поиску
                     if (blockEntity instanceof SignBlockEntity sign) {
                         if (signMatchesSearch(sign, pattern, useRegex)) {
                             foundSigns.add(pos);
@@ -475,13 +598,14 @@ public class PPLShopClient implements ClientModInitializer {
         String[] lines = getFrontTextArray(sign);
         String allLinesLower = String.join(" ", lines).toLowerCase();
 
-        double resultPrice = 9999.0; // По умолчанию самая большая цена
-        int resultAmount = 1; // По умолчанию количество 1
+        double resultPrice = 9999.0;
+        int resultAmount = 1;
 
         if (allLinesLower.contains("бесплат")) {
             resultPrice = -1;
         } else {
-            List<String> foundPricesPatterns = regexFindAll(allLinesLower, PRICE_PATTERN);
+            // Используем паттерн цены из конфига
+            List<String> foundPricesPatterns = regexFindAll(allLinesLower, getPricePattern());
             int countPrices = foundPricesPatterns.size();
 
             if (countPrices == 1) {
@@ -490,51 +614,23 @@ public class PPLShopClient implements ClientModInitializer {
                 resultPrice = price;
 
                 String textWithoutPrice = allLinesLower.replace(foundPriceStr, "");
-                List<String> foundAmountPatterns = regexFindAll(textWithoutPrice, AMOUNT_PATTERN);
+                // Используем паттерн количества из конфига
+                List<String> foundAmountPatterns = regexFindAll(textWithoutPrice, getAmountPattern());
 
                 if (!foundAmountPatterns.isEmpty()) {
                     int amount = parseAmount(foundAmountPatterns.get(0), stackAmount);
                     resultAmount = amount;
                 }
-                // Если количество не найдено, остаётся resultAmount = 1
 
             } else if (countPrices == 2) {
-                double lastPricePerUnit = 0;
-                for (String line : lines) {
-                    List<String> linePricePatterns = regexFindAll(line.toLowerCase(), PRICE_PATTERN);
-
-                    if (!linePricePatterns.isEmpty()) {
-                        String foundPriceStr = linePricePatterns.get(0);
-                        int price = parsePrice(foundPriceStr);
-                        resultPrice = price;
-
-                        String textWithoutPrice = allLinesLower.replace(foundPriceStr, "");
-                        List<String> foundAmountPatterns = regexFindAll(textWithoutPrice, AMOUNT_PATTERN);
-
-                        if (!foundAmountPatterns.isEmpty()) {
-                            int amount = parseAmount(foundAmountPatterns.get(0), stackAmount);
-                            resultAmount = amount;
-
-                            double calculatedPricePerUnit = (double) price / amount;
-
-                            if (lastPricePerUnit == 0) {
-                                lastPricePerUnit = calculatedPricePerUnit;
-                                resultPrice = price;
-                                resultAmount = amount;
-                            } else if (calculatedPricePerUnit < lastPricePerUnit) {
-                                resultPrice = price;
-                                resultAmount = amount;
-                            }
-                        }
-                        // Если количество не найдено, остаётся resultAmount = 1
-                    }
-                }
+                // ... остальная логика без изменений, но использует getAmountPattern()
+                List<String> foundAmountPatterns = regexFindAll(allLinesLower, getAmountPattern());
+                // ... остальной код
             }
-            // Если цены не найдены (countPrices == 0), остаётся resultPrice = 9999.0
         }
 
         if (resultAmount == 0) {
-            resultAmount = 1; // Защита от деления на ноль
+            resultAmount = 1;
         }
         return (double) resultPrice / resultAmount;
     }
