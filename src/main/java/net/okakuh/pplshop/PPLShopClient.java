@@ -1,5 +1,6 @@
 package net.okakuh.pplshop;
 
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -85,6 +86,7 @@ public class PPLShopClient implements ClientModInitializer {
     private static boolean wasUpPressed = false;
     private static boolean wasDownPressed = false;
     private static boolean wasMiddleMousePressed = false;
+    private static boolean wasBackspacePressed = false;
 
     @Override
     public void onInitializeClient() {
@@ -319,7 +321,7 @@ public class PPLShopClient implements ClientModInitializer {
                                         Formatting color1 = convertColorNameToFormatting(config.highlight_colors.get(0));
                                         Formatting color2 = convertColorNameToFormatting(config.highlight_colors.get(1));
 
-                                        context.getSource().sendFeedback(Text.literal("§6=== НАСТРОЙКИ PepeLand Shop ==="));
+                                        context.getSource().sendFeedback(Text.literal("§6=== НАСТРОЙКИ PPLSHOP ==="));
                                         context.getSource().sendFeedback(Text.literal("§aРадиус по умолчанию: §e" + config.default_radius));
                                         context.getSource().sendFeedback(Text.literal("§aСтак по умолчанию: §e" + config.default_stack));
                                         context.getSource().sendFeedback(Text.literal("§aПаттерн цены: §e" + config.price_pattern));
@@ -329,8 +331,23 @@ public class PPLShopClient implements ClientModInitializer {
                                                 .append(Text.literal(config.highlight_colors.get(0)).formatted(color1))
                                                 .append(Text.literal(" §fи "))
                                                 .append(Text.literal(config.highlight_colors.get(1)).formatted(color2)));
+                                        context.getSource().sendFeedback(Text.literal("§aАльтернативная навигация: §e" + (config.enable_alternative_keys ? "включено" : "отключано")));
                                         return 1;
                                     })
+                            )
+                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("alternative_key_navigation")
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("enabled", BoolArgumentType.bool())
+                                            .executes(context -> {
+                                                boolean enabled = BoolArgumentType.getBool(context, "enabled");
+                                                Config config = getConfig();
+                                                config.enable_alternative_keys = enabled;
+                                                setConfig(config);
+
+                                                String status = enabled ? "§aвключено" : "§cотключано";
+                                                context.getSource().sendFeedback(Text.literal("§aАльтернативные клавиши навигации: " + status));
+                                                return 1;
+                                            })
+                                    )
                             )
             );
         });
@@ -360,54 +377,34 @@ public class PPLShopClient implements ClientModInitializer {
         }
     }
 
-    private static int convertColorNameToDecimal(String colorName) {
-        switch (colorName.toLowerCase()) {
-            case "black": return 0x000000;
-            case "dark_blue": return 0x0000AA;
-            case "dark_green": return 0x00AA00;
-            case "dark_aqua": return 0x00AAAA;
-            case "dark_red": return 0xAA0000;
-            case "dark_purple": return 0xAA00AA;
-            case "gold": return 0xFFAA00;
-            case "gray": return 0xAAAAAA;
-            case "dark_gray": return 0x555555;
-            case "blue": return 0x5555FF;
-            case "green": return 0x55FF55;
-            case "aqua": return 0x55FFFF;
-            case "red": return 0xFF5555;
-            case "light_purple": return 0xFF55FF;
-            case "yellow": return 0xFFFF55;
-            case "white": return 0xFFFFFF;
-            case "reset":
-            default: return 0x55FF55; // green по умолчанию
-        }
-    }
-
     private static void handleKeyNavigation(net.minecraft.client.MinecraftClient client) {
         if (!navigationActive) return;
 
         long window = client.getWindow().getHandle();
+        boolean enableAltKeys = getConfig().enable_alternative_keys;
 
-        // Alt + W - следующая группа
-        boolean altPressed = InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_LEFT_ALT) ||
-                InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_RIGHT_ALT);
+        // Alt + W - следующая группа (только если включены альтернативные клавиши)
+        if (enableAltKeys) {
+            boolean altPressed = InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_LEFT_ALT) ||
+                    InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_RIGHT_ALT);
 
-        if (altPressed && InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_W) && !wasAltWPressed) {
-            wasAltWPressed = true;
-            nextGroup();
-        } else if (!InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_W)) {
-            wasAltWPressed = false;
+            if (altPressed && InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_W) && !wasAltWPressed) {
+                wasAltWPressed = true;
+                nextGroup();
+            } else if (!InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_W)) {
+                wasAltWPressed = false;
+            }
+
+            // Alt + S - предыдущая группа
+            if (altPressed && InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_S) && !wasAltSPressed) {
+                wasAltSPressed = true;
+                previousGroup();
+            } else if (!InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_S)) {
+                wasAltSPressed = false;
+            }
         }
 
-        // Alt + S - предыдущая группа
-        if (altPressed && InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_S) && !wasAltSPressed) {
-            wasAltSPressed = true;
-            previousGroup();
-        } else if (!InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_S)) {
-            wasAltSPressed = false;
-        }
-
-        // Стрелка ВВЕРХ - следующая группа (без Alt)
+        // Стрелка ВВЕРХ - следующая группа (всегда включено)
         if (InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_UP) && !wasUpPressed) {
             wasUpPressed = true;
             nextGroup();
@@ -415,7 +412,7 @@ public class PPLShopClient implements ClientModInitializer {
             wasUpPressed = false;
         }
 
-        // Стрелка ВНИЗ - предыдущая группа (без Alt)
+        // Стрелка ВНИЗ - предыдущая группа (всегда включено)
         if (InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_DOWN) && !wasDownPressed) {
             wasDownPressed = true;
             previousGroup();
@@ -423,12 +420,12 @@ public class PPLShopClient implements ClientModInitializer {
             wasDownPressed = false;
         }
 
-        // Средняя кнопка мыши для остановки навигации
-        if (GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_MIDDLE) == GLFW.GLFW_PRESS && !wasMiddleMousePressed) {
-            wasMiddleMousePressed = true;
+        // Backspace для завершения навигации (всегда включено)
+        if (InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_BACKSPACE) && !wasBackspacePressed) {
+            wasBackspacePressed = true;
             stopNavigation();
-        } else if (GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_MIDDLE) == GLFW.GLFW_RELEASE) {
-            wasMiddleMousePressed = false;
+        } else if (!InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_BACKSPACE)) {
+            wasBackspacePressed = false;
         }
     }
 
@@ -544,8 +541,20 @@ public class PPLShopClient implements ClientModInitializer {
         // Выводим инструкции по навигации в чат
         source.sendFeedback(Text.literal(""));
         source.sendFeedback(Text.literal("§6=== НАВИГАЦИЯ ==="));
-        source.sendFeedback(Text.literal("§eСтрелки: ВВЕРХ/ВНИЗ §7- навигация по цен. категориям")); // МЕНЯЕМ ТЕКСТ
+        source.sendFeedback(Text.literal("§eСтрелки: ВВЕРХ/ВНИЗ §7- навигация по цен. категориям"));
+
+        boolean enableAltKeys = getConfig().enable_alternative_keys;
+        if (enableAltKeys) {
+            source.sendFeedback(Text.literal("§eAlt+W/Alt+S §7- альтернативная навигация"));
+        }
+
         source.sendFeedback(Text.literal("§cBackspace §7- завершить навигацию"));
+        source.sendFeedback(Text.literal("§cСредняя кнопка мыши §7- завершить навигацию"));
+
+        if (!enableAltKeys) {
+            source.sendFeedback(Text.literal("§7Альтернативные клавиши отключены в настройках"));
+        }
+
         source.sendFeedback(Text.literal("§6=================="));
 
         // Запускаем навигацию

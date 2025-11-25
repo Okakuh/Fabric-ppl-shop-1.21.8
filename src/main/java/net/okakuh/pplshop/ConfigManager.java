@@ -26,6 +26,7 @@ public class ConfigManager {
         public String amount_pattern = "\\d+\\s*[а-яё]{2}";
         public List<Integer> y_coords = Arrays.asList(0, 3);
         public List<String> highlight_colors = Arrays.asList("white", "yellow");
+        public boolean enable_alternative_keys = true;
     }
 
     public static void loadConfig() {
