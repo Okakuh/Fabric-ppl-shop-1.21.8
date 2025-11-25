@@ -1,4 +1,4 @@
-package net.okakuh.pplshop;
+package net.okakuh.pepelandshop;
 
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import net.fabricmc.api.ClientModInitializer;
@@ -7,16 +7,13 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import net.minecraft.command.argument.ColorArgumentType;
+import net.minecraft.client.util.InputUtil;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.util.InputUtil;
 import net.minecraft.util.DyeColor;
-import org.lwjgl.glfw.GLFW;
-import net.minecraft.command.argument.ColorArgumentType;
 import net.minecraft.util.Formatting;
 
 import java.util.ArrayList;
@@ -27,9 +24,9 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.Arrays;
 
-import static net.okakuh.pplshop.ConfigManager.*;
+import static net.okakuh.pepelandshop.ConfigManager.*;
 
-public class PPLShopClient implements ClientModInitializer {
+public class PepelandShopClient implements ClientModInitializer {
 
     public static int getDefaultSearchRadius() {
         return getConfig().default_radius;
@@ -61,7 +58,7 @@ public class PPLShopClient implements ClientModInitializer {
 
     public static Formatting getSecondHighlightColor() {
         List<String> colors = getConfig().highlight_colors;
-        String secondColor = colors.size() > 1 ? colors.get(1) : "yellow";
+        String secondColor = colors.size() > 1 ? colors.get(1) : "black";
         return convertColorNameToFormatting(secondColor);
     }
 
@@ -81,12 +78,12 @@ public class PPLShopClient implements ClientModInitializer {
     private static boolean navigationActive = false;
 
     // Флаги для защиты от множественных нажатий
-    private static boolean wasAltWPressed = false;
-    private static boolean wasAltSPressed = false;
     private static boolean wasUpPressed = false;
     private static boolean wasDownPressed = false;
-    private static boolean wasMiddleMousePressed = false;
     private static boolean wasBackspacePressed = false;
+    private static boolean wasAltNextPressed = false;
+    private static boolean wasAltPrevPressed = false;
+    private static boolean wasAltStopPressed = false;
 
     @Override
     public void onInitializeClient() {
@@ -315,6 +312,118 @@ public class PPLShopClient implements ClientModInitializer {
                                             )
                                     )
                             )
+                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("use_alternative_navigation")
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("enabled", BoolArgumentType.bool())
+                                            .executes(context -> {
+                                                boolean enabled = BoolArgumentType.getBool(context, "enabled");
+                                                Config config = getConfig();
+                                                config.use_alternative_navigation = enabled;
+                                                setConfig(config);
+
+                                                String status = enabled ? "§aвключена" : "§cотключена";
+                                                context.getSource().sendFeedback(Text.literal("§aАльтернативная навигация: " + status));
+                                                return 1;
+                                            })
+                                    )
+                            )
+                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("use_quick_shop")
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("enabled", BoolArgumentType.bool())
+                                            .executes(context -> {
+                                                boolean enabled = BoolArgumentType.getBool(context, "enabled");
+                                                Config config = getConfig();
+                                                config.use_quick_shop = enabled;
+                                                setConfig(config);
+
+                                                String status = enabled ? "§aвключен" : "§cотключен";
+                                                context.getSource().sendFeedback(Text.literal("§aБыстрый магазин: " + status));
+                                                return 1;
+                                            })
+                                    )
+                            )
+                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("keybinds")
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("quick_shop")
+                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("modifier", StringArgumentType.string())
+                                                    .suggests((context, builder) -> {
+                                                        builder.suggest(""); // пустой модификатор
+                                                        for (String keyName : KeyBindings.getAllKeyNames()) {
+                                                            builder.suggest(keyName);
+                                                        }
+                                                        return builder.buildFuture();
+                                                    })
+                                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("key", StringArgumentType.string())
+                                                            .suggests((context, builder) -> {
+                                                                for (String keyName : KeyBindings.getAllKeyNames()) {
+                                                                    builder.suggest(keyName);
+                                                                }
+                                                                return builder.buildFuture();
+                                                            })
+                                                            .executes(context -> {
+                                                                String modifier = StringArgumentType.getString(context, "modifier");
+                                                                String key = StringArgumentType.getString(context, "key");
+
+                                                                Config config = getConfig();
+                                                                config.quick_shop = new ConfigManager.KeyBind(modifier, key);
+                                                                setConfig(config);
+
+                                                                context.getSource().sendFeedback(Text.literal("§aУстановлена клавиша быстрого магазина: §e" + config.quick_shop.getDisplayName()));
+                                                                return 1;
+                                                            })
+                                                    )
+                                            )
+                                    )
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("alternative_navigation")
+                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("next_group")
+                                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("modifier", StringArgumentType.string())
+                                                            .suggests((context, builder) -> {
+                                                                builder.suggest("");
+                                                                for (String keyName : KeyBindings.getAllKeyNames()) {
+                                                                    builder.suggest(keyName);
+                                                                }
+                                                                return builder.buildFuture();
+                                                            })
+                                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("key", StringArgumentType.string())
+                                                                    .suggests((context, builder) -> {
+                                                                        for (String keyName : KeyBindings.getAllKeyNames()) {
+                                                                            builder.suggest(keyName);
+                                                                        }
+                                                                        return builder.buildFuture();
+                                                                    })
+                                                                    .executes(context -> {
+                                                                        String modifier = StringArgumentType.getString(context, "modifier");
+                                                                        String key = StringArgumentType.getString(context, "key");
+
+                                                                        Config config = getConfig();
+                                                                        config.alternative_navigation.next_group = new ConfigManager.KeyBind(modifier, key);
+                                                                        setConfig(config);
+
+                                                                        context.getSource().sendFeedback(Text.literal("§aУстановлена клавиша след. группы: §e" + config.alternative_navigation.next_group.getDisplayName()));
+                                                                        return 1;
+                                                                    })
+                                                            )
+                                                    )
+                                            )
+                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("previous_group")
+                                                    // аналогично next_group
+                                            )
+                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("end_navigation")
+                                                    // аналогично next_group
+                                            )
+                                    )
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("show")
+                                            .executes(context -> {
+                                                Config config = getConfig();
+                                                context.getSource().sendFeedback(Text.literal("§6=== НАСТРОЙКИ КЛАВИШ ==="));
+                                                context.getSource().sendFeedback(Text.literal("§aБыстрый магазин: §e" + config.quick_shop.getDisplayName() + " §7(используется: " + (config.use_quick_shop ? "§aда" : "§cнет") + "§7)"));
+                                                context.getSource().sendFeedback(Text.literal("§aАльтернативная навигация: §e" + (config.use_alternative_navigation ? "включена" : "отключена")));
+                                                if (config.use_alternative_navigation) {
+                                                    context.getSource().sendFeedback(Text.literal("  §aСледующая группа: §e" + config.alternative_navigation.next_group.getDisplayName()));
+                                                    context.getSource().sendFeedback(Text.literal("  §aПредыдущая группа: §e" + config.alternative_navigation.previous_group.getDisplayName()));
+                                                    context.getSource().sendFeedback(Text.literal("  §aОстановка навигации: §e" + config.alternative_navigation.end_navigation.getDisplayName()));
+                                                }
+                                                return 1;
+                                            })
+                                    )
+                            )
                             .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("show")
                                     .executes(context -> {
                                         Config config = getConfig();
@@ -331,25 +440,13 @@ public class PPLShopClient implements ClientModInitializer {
                                                 .append(Text.literal(config.highlight_colors.get(0)).formatted(color1))
                                                 .append(Text.literal(" §fи "))
                                                 .append(Text.literal(config.highlight_colors.get(1)).formatted(color2)));
-                                        context.getSource().sendFeedback(Text.literal("§aАльтернативная навигация: §e" + (config.enable_alternative_keys ? "включено" : "отключано")));
+                                        context.getSource().sendFeedback(Text.literal("§aАльтернативная навигация: §e" + (config.use_alternative_navigation ? "включена" : "отключена")));
+                                        context.getSource().sendFeedback(Text.literal("§aБыстрый магазин: §e" + (config.use_quick_shop ? "включен" : "отключен")));
+                                        context.getSource().sendFeedback(Text.literal("§aНастройки клавиш: §eиспользуйте /shop_settings keybinds show"));
                                         return 1;
                                     })
                             )
-                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("alternative_key_navigation")
-                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("enabled", BoolArgumentType.bool())
-                                            .executes(context -> {
-                                                boolean enabled = BoolArgumentType.getBool(context, "enabled");
-                                                Config config = getConfig();
-                                                config.enable_alternative_keys = enabled;
-                                                setConfig(config);
-
-                                                String status = enabled ? "§aвключено" : "§cотключано";
-                                                context.getSource().sendFeedback(Text.literal("§aАльтернативные клавиши навигации: " + status));
-                                                return 1;
-                                            })
-                                    )
-                            )
-            );
+                        );
         });
     }
 
@@ -381,30 +478,9 @@ public class PPLShopClient implements ClientModInitializer {
         if (!navigationActive) return;
 
         long window = client.getWindow().getHandle();
-        boolean enableAltKeys = getConfig().enable_alternative_keys;
+        Config config = getConfig();
 
-        // Alt + W - следующая группа (только если включены альтернативные клавиши)
-        if (enableAltKeys) {
-            boolean altPressed = InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_LEFT_ALT) ||
-                    InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_RIGHT_ALT);
-
-            if (altPressed && InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_W) && !wasAltWPressed) {
-                wasAltWPressed = true;
-                nextGroup();
-            } else if (!InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_W)) {
-                wasAltWPressed = false;
-            }
-
-            // Alt + S - предыдущая группа
-            if (altPressed && InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_S) && !wasAltSPressed) {
-                wasAltSPressed = true;
-                previousGroup();
-            } else if (!InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_S)) {
-                wasAltSPressed = false;
-            }
-        }
-
-        // Стрелка ВВЕРХ - следующая группа (всегда включено)
+        // ХАРДКОДЕД КЛАВИШИ (всегда работают)
         if (InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_UP) && !wasUpPressed) {
             wasUpPressed = true;
             nextGroup();
@@ -412,7 +488,6 @@ public class PPLShopClient implements ClientModInitializer {
             wasUpPressed = false;
         }
 
-        // Стрелка ВНИЗ - предыдущая группа (всегда включено)
         if (InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_DOWN) && !wasDownPressed) {
             wasDownPressed = true;
             previousGroup();
@@ -420,17 +495,43 @@ public class PPLShopClient implements ClientModInitializer {
             wasDownPressed = false;
         }
 
-        // Backspace для завершения навигации (всегда включено)
         if (InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_BACKSPACE) && !wasBackspacePressed) {
             wasBackspacePressed = true;
             stopNavigation();
         } else if (!InputUtil.isKeyPressed(window, InputUtil.GLFW_KEY_BACKSPACE)) {
             wasBackspacePressed = false;
         }
+
+        // АЛЬТЕРНАТИВНЫЕ КЛАВИШИ (только если включены)
+        if (config.use_alternative_navigation) {
+            // Следующая группа
+            if (KeyBindings.isKeyBindPressed(window, config.alternative_navigation.next_group) && !wasAltNextPressed) {
+                wasAltNextPressed = true;
+                nextGroup();
+            } else if (!KeyBindings.isKeyBindPressed(window, config.alternative_navigation.next_group)) {
+                wasAltNextPressed = false;
+            }
+
+            // Предыдущая группа
+            if (KeyBindings.isKeyBindPressed(window, config.alternative_navigation.previous_group) && !wasAltPrevPressed) {
+                wasAltPrevPressed = true;
+                previousGroup();
+            } else if (!KeyBindings.isKeyBindPressed(window, config.alternative_navigation.previous_group)) {
+                wasAltPrevPressed = false;
+            }
+
+            // Остановка навигации
+            if (KeyBindings.isKeyBindPressed(window, config.alternative_navigation.end_navigation) && !wasAltStopPressed) {
+                wasAltStopPressed = true;
+                stopNavigation();
+            } else if (!KeyBindings.isKeyBindPressed(window, config.alternative_navigation.end_navigation)) {
+                wasAltStopPressed = false;
+            }
+        }
     }
 
     // Метод для начала навигации
-    private static void startNavigation(Map<Double, List<BlockPos>> sortedSigns, String pattern, int stack, int radius, int totalSigns) {
+    private static void startNavigation(Map<Double, List<BlockPos>> sortedSigns, int stack) {
         currentSortedSigns = sortedSigns;
         currentPriceKeys = new ArrayList<>(sortedSigns.keySet());
         currentGroupIndex = 0;
@@ -541,25 +642,24 @@ public class PPLShopClient implements ClientModInitializer {
         // Выводим инструкции по навигации в чат
         source.sendFeedback(Text.literal(""));
         source.sendFeedback(Text.literal("§6=== НАВИГАЦИЯ ==="));
-        source.sendFeedback(Text.literal("§eСтрелки: ВВЕРХ/ВНИЗ §7- навигация по цен. категориям"));
+        source.sendFeedback(Text.literal("§eСтрелка ВВЕРХ §7- следующая группа"));
+        source.sendFeedback(Text.literal("§eСтрелка ВНИЗ §7- предыдущая группа"));
+        source.sendFeedback(Text.literal("§eBackspace §7- завершить навигацию"));
 
-        boolean enableAltKeys = getConfig().enable_alternative_keys;
-        if (enableAltKeys) {
-            source.sendFeedback(Text.literal("§eAlt+W/Alt+S §7- альтернативная навигация"));
-        }
-
-        source.sendFeedback(Text.literal("§cBackspace §7- завершить навигацию"));
-        source.sendFeedback(Text.literal("§cСредняя кнопка мыши §7- завершить навигацию"));
-
-        if (!enableAltKeys) {
-            source.sendFeedback(Text.literal("§7Альтернативные клавиши отключены в настройках"));
+        Config config = getConfig();
+        if (config.use_alternative_navigation) {
+            source.sendFeedback(Text.literal("§e" + config.alternative_navigation.next_group.getDisplayName() + " §7- альтернативная следующая группа"));
+            source.sendFeedback(Text.literal("§e" + config.alternative_navigation.previous_group.getDisplayName() + " §7- альтернативная предыдущая группа"));
+            source.sendFeedback(Text.literal("§e" + config.alternative_navigation.end_navigation.getDisplayName() + " §7- альтернативная остановка"));
+        } else {
+            source.sendFeedback(Text.literal("§7Альтернативная навигация отключена в настройках"));
         }
 
         source.sendFeedback(Text.literal("§6=================="));
 
         // Запускаем навигацию
         if (!sortedSigns.isEmpty()) {
-            startNavigation(sortedSigns, pattern, stack, radius, foundSigns.size());
+            startNavigation(sortedSigns, stack);
         } else {
             source.sendFeedback(Text.literal("§cНе найдено подходящих табличек для навигации"));
         }

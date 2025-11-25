@@ -1,20 +1,20 @@
 {
   "schemaVersion": 1,
-  "id": "ppl-shop",
+  "id": "pepeland-shop",
   "version": "1.0.0",
-  "name": "PPL Shop",
-  "description": "Shop mod with custom client commands",
-  "authors": ["YourName"],
+  "name": "PepeLand Shop",
+  "description": "Smart sign searcher for Pepeland Server",
+  "authors": ["Okakuh"],
   "contact": {},
   "license": "MIT",
-  "icon": "assets/ppl-shop/icon.png",
+  "icon": "assets/pepeland-shop/icon.png",
   "environment": "*",
   "entrypoints": {
     "main": [
-      "net.okakuh.pplshop.PPLShop"
+      "net.okakuh.pepelandshop.PepelandShop"
     ],
     "client": [
-      "net.okakuh.pplshop.PPLShopClient"
+      "net.okakuh.pepelandshop.PepelandShopClient"
     ]
   },
   "depends": {

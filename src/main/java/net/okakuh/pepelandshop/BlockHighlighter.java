@@ -1,4 +1,4 @@
-package net.okakuh.pplshop;
+package net.okakuh.pepelandshop;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.DepthTestFunction;
