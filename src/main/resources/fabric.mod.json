@@ -1,30 +1,24 @@
 {
   "schemaVersion": 1,
-  "id": "pepeland-shop",
+  "id": "pepelandshop",
   "version": "1.0.0",
-  "name": "PepeLand Shop",
-  "description": "Smart sign searcher for Pepeland Server",
-  "authors": ["Okakuh"],
+  "name": "Pepeland Shop",
+  "description": "Мод для поиска магазинов",
+  "authors": ["You"],
   "contact": {},
   "license": "MIT",
-  "icon": "assets/pepeland-shop/icon.png",
-  "environment": "*",
+  "icon": "assets/pepelandshop/icon.png",
+  "environment": "client",
   "entrypoints": {
-    "main": [
-      "net.okakuh.pepelandshop.PepelandShop"
-    ],
     "client": [
       "net.okakuh.pepelandshop.PepelandShopClient"
     ]
   },
+  "mixins": [],
   "depends": {
     "fabricloader": ">=0.15.0",
-    "minecraft": "~1.21",
+    "minecraft": "1.21.8",
     "java": ">=21",
     "fabric-api": "*"
-  },
-  "suggests": {
-    "modmenu": "*",
-    "cloth-config": "*"
   }
 }

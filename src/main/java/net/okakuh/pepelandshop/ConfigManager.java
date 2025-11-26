@@ -1,3 +1,4 @@
+// ConfigManager.java
 package net.okakuh.pepelandshop;
 
 import com.google.gson.Gson;
@@ -22,15 +23,12 @@ public class ConfigManager {
         public String price_pattern = "\\d+\\s*а[а-яё]{1}";
         public String amount_pattern = "\\d+\\s*[а-яё]{2}";
         public List<Integer> y_coords = Arrays.asList(0, 3);
-        public List<String> highlight_colors = Arrays.asList("white", "black");
+        public List<String> highlight_colors = Arrays.asList("green", "blue");
 
-        // Новые настройки навигации
-        public boolean use_alternative_navigation = false;
-        public boolean use_quick_shop = false;
+        // Новые настройки модификаторов
+        public boolean use_navigation_modifiers = false;
+        public boolean use_quick_shop_modifier = true;
 
-        // Настройки клавиш
-        public KeyBind quick_shop = new KeyBind("left_shift", "q");
-        public AlternativeNavigationKeys alternative_navigation = new AlternativeNavigationKeys();
     }
 
     public static void loadConfig() {
@@ -63,39 +61,5 @@ public class ConfigManager {
     public static void setConfig(Config newConfig) {
         config = newConfig;
         saveConfig();
-    }
-    // Класс для одной клавиши/комбинации
-    public static class KeyBind {
-        public String modifier = ""; // может быть пустым для одиночной клавиши
-        public String key = "";
-
-        public KeyBind() {}
-
-        public KeyBind(String modifier, String key) {
-            this.modifier = modifier;
-            this.key = key;
-        }
-
-        public String getCombo() {
-            if (modifier == null || modifier.isEmpty()) {
-                return key;
-            } else {
-                return modifier + "+" + key;
-            }
-        }
-
-        public String getDisplayName() {
-            if (modifier == null || modifier.isEmpty()) {
-                return KeyBindings.getDisplayName(key);
-            } else {
-                return KeyBindings.getDisplayName(modifier) + " + " + KeyBindings.getDisplayName(key);
-            }
-        }
-    }
-    // Класс для альтернативной навигации
-    public static class AlternativeNavigationKeys {
-        public KeyBind next_group = new KeyBind("left_alt", "w");
-        public KeyBind previous_group = new KeyBind("left_alt", "s");
-        public KeyBind end_navigation = new KeyBind("left_alt", "backspace");
     }
 }

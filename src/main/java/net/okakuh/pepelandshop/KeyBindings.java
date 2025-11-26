@@ -168,38 +168,4 @@ public class KeyBindings {
         return names;
     }
 
-    public static boolean isKeyComboPressed(long window, String keyCombo) {
-        if (keyCombo == null || keyCombo.isEmpty()) return false;
-
-        String[] parts = keyCombo.split("\\+");
-        boolean allPressed = true;
-
-        for (String part : parts) {
-            int keyCode = getKeyCode(part.trim());
-            if (keyCode != -1) {
-                if (!InputUtil.isKeyPressed(window, keyCode)) {
-                    allPressed = false;
-                    break;
-                }
-            } else {
-                allPressed = false;
-                break;
-            }
-        }
-
-        return allPressed;
-    }
-    // Метод для проверки KeyBind
-    public static boolean isKeyBindPressed(long window, ConfigManager.KeyBind keyBind) {
-        if (keyBind == null || keyBind.key == null || keyBind.key.isEmpty()) return false;
-
-        // Если есть модификатор, проверяем комбинацию
-        if (keyBind.modifier != null && !keyBind.modifier.isEmpty()) {
-            return isKeyComboPressed(window, keyBind.getCombo());
-        } else {
-            // Если нет модификатора, проверяем только клавишу
-            int keyCode = getKeyCode(keyBind.key);
-            return keyCode != -1 && InputUtil.isKeyPressed(window, keyCode);
-        }
-    }
 }

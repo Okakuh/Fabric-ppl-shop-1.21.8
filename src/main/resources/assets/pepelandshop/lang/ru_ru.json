@@ -1,0 +1,10 @@
+{
+  "key.pepelandshop.quick_shop": "Быстрый магазин",
+  "key.pepelandshop.next_group": "Следующая группа",
+  "key.pepelandshop.previous_group": "Предыдущая группа",
+  "key.pepelandshop.end_navigation": "Остановка навигации",
+  "key.pepelandshop.navigation_modifier": "Модификатор навигации",
+  "key.pepelandshop.quick_shop_modifier": "Модификатор быстрого магазина",
+  "category.pepelandshop.main": "Pepeland Магазин",
+  "category.pepelandshop.modifiers": "Pepeland Модификаторы"
+}
