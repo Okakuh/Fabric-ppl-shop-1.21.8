@@ -191,7 +191,15 @@ public class KeyBindings {
     }
     // Метод для проверки KeyBind
     public static boolean isKeyBindPressed(long window, ConfigManager.KeyBind keyBind) {
-        if (keyBind == null || keyBind.key.isEmpty()) return false;
-        return isKeyComboPressed(window, keyBind.getCombo());
+        if (keyBind == null || keyBind.key == null || keyBind.key.isEmpty()) return false;
+
+        // Если есть модификатор, проверяем комбинацию
+        if (keyBind.modifier != null && !keyBind.modifier.isEmpty()) {
+            return isKeyComboPressed(window, keyBind.getCombo());
+        } else {
+            // Если нет модификатора, проверяем только клавишу
+            int keyCode = getKeyCode(keyBind.key);
+            return keyCode != -1 && InputUtil.isKeyPressed(window, keyCode);
+        }
     }
 }

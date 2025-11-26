@@ -303,15 +303,25 @@ public class PepelandShopClient implements ClientModInitializer {
                             )
                             .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("keybinds")
                                     .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("quick_shop")
-                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("modifier", StringArgumentType.string())
+                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("key", StringArgumentType.string())
                                                     .suggests((context, builder) -> {
-                                                        builder.suggest(""); // пустой модификатор
                                                         for (String keyName : KeyBindings.getAllKeyNames()) {
                                                             builder.suggest(keyName);
                                                         }
                                                         return builder.buildFuture();
                                                     })
-                                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("key", StringArgumentType.string())
+                                                    .executes(context -> {
+                                                        // Только клавиша (без модификатора)
+                                                        String key = StringArgumentType.getString(context, "key");
+
+                                                        Config config = getConfig();
+                                                        config.quick_shop = new ConfigManager.KeyBind("", key);
+                                                        setConfig(config);
+
+                                                        context.getSource().sendFeedback(Text.literal("§aУстановлена клавиша быстрого магазина: §e" + config.quick_shop.getDisplayName()));
+                                                        return 1;
+                                                    })
+                                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("modifier", StringArgumentType.string())
                                                             .suggests((context, builder) -> {
                                                                 for (String keyName : KeyBindings.getAllKeyNames()) {
                                                                     builder.suggest(keyName);
@@ -319,8 +329,9 @@ public class PepelandShopClient implements ClientModInitializer {
                                                                 return builder.buildFuture();
                                                             })
                                                             .executes(context -> {
-                                                                String modifier = StringArgumentType.getString(context, "modifier");
+                                                                // Клавиша + модификатор
                                                                 String key = StringArgumentType.getString(context, "key");
+                                                                String modifier = StringArgumentType.getString(context, "modifier");
 
                                                                 Config config = getConfig();
                                                                 config.quick_shop = new ConfigManager.KeyBind(modifier, key);
@@ -334,15 +345,25 @@ public class PepelandShopClient implements ClientModInitializer {
                                     )
                                     .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("alternative_navigation")
                                             .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("next_group")
-                                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("modifier", StringArgumentType.string())
+                                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("key", StringArgumentType.string())
                                                             .suggests((context, builder) -> {
-                                                                builder.suggest("");
                                                                 for (String keyName : KeyBindings.getAllKeyNames()) {
                                                                     builder.suggest(keyName);
                                                                 }
                                                                 return builder.buildFuture();
                                                             })
-                                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("key", StringArgumentType.string())
+                                                            .executes(context -> {
+                                                                // Только клавиша
+                                                                String key = StringArgumentType.getString(context, "key");
+
+                                                                Config config = getConfig();
+                                                                config.alternative_navigation.next_group = new ConfigManager.KeyBind("", key);
+                                                                setConfig(config);
+
+                                                                context.getSource().sendFeedback(Text.literal("§aУстановлена клавиша след. группы: §e" + config.alternative_navigation.next_group.getDisplayName()));
+                                                                return 1;
+                                                            })
+                                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("modifier", StringArgumentType.string())
                                                                     .suggests((context, builder) -> {
                                                                         for (String keyName : KeyBindings.getAllKeyNames()) {
                                                                             builder.suggest(keyName);
@@ -350,8 +371,9 @@ public class PepelandShopClient implements ClientModInitializer {
                                                                         return builder.buildFuture();
                                                                     })
                                                                     .executes(context -> {
-                                                                        String modifier = StringArgumentType.getString(context, "modifier");
+                                                                        // Клавиша + модификатор
                                                                         String key = StringArgumentType.getString(context, "key");
+                                                                        String modifier = StringArgumentType.getString(context, "modifier");
 
                                                                         Config config = getConfig();
                                                                         config.alternative_navigation.next_group = new ConfigManager.KeyBind(modifier, key);
@@ -364,26 +386,103 @@ public class PepelandShopClient implements ClientModInitializer {
                                                     )
                                             )
                                             .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("previous_group")
-                                                    // аналогично next_group
+                                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("key", StringArgumentType.string())
+                                                            .suggests((context, builder) -> {
+                                                                for (String keyName : KeyBindings.getAllKeyNames()) {
+                                                                    builder.suggest(keyName);
+                                                                }
+                                                                return builder.buildFuture();
+                                                            })
+                                                            .executes(context -> {
+                                                                // Только клавиша
+                                                                String key = StringArgumentType.getString(context, "key");
+
+                                                                Config config = getConfig();
+                                                                config.alternative_navigation.previous_group = new ConfigManager.KeyBind("", key);
+                                                                setConfig(config);
+
+                                                                context.getSource().sendFeedback(Text.literal("§aУстановлена клавиша пред. группы: §e" + config.alternative_navigation.previous_group.getDisplayName()));
+                                                                return 1;
+                                                            })
+                                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("modifier", StringArgumentType.string())
+                                                                    .suggests((context, builder) -> {
+                                                                        for (String keyName : KeyBindings.getAllKeyNames()) {
+                                                                            builder.suggest(keyName);
+                                                                        }
+                                                                        return builder.buildFuture();
+                                                                    })
+                                                                    .executes(context -> {
+                                                                        // Клавиша + модификатор
+                                                                        String key = StringArgumentType.getString(context, "key");
+                                                                        String modifier = StringArgumentType.getString(context, "modifier");
+
+                                                                        Config config = getConfig();
+                                                                        config.alternative_navigation.previous_group = new ConfigManager.KeyBind(modifier, key);
+                                                                        setConfig(config);
+
+                                                                        context.getSource().sendFeedback(Text.literal("§aУстановлена клавиша пред. группы: §e" + config.alternative_navigation.previous_group.getDisplayName()));
+                                                                        return 1;
+                                                                    })
+                                                            )
+                                                    )
                                             )
                                             .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("end_navigation")
-                                                    // аналогично next_group
+                                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("key", StringArgumentType.string())
+                                                            .suggests((context, builder) -> {
+                                                                for (String keyName : KeyBindings.getAllKeyNames()) {
+                                                                    builder.suggest(keyName);
+                                                                }
+                                                                return builder.buildFuture();
+                                                            })
+                                                            .executes(context -> {
+                                                                // Только клавиша
+                                                                String key = StringArgumentType.getString(context, "key");
+
+                                                                Config config = getConfig();
+                                                                config.alternative_navigation.end_navigation = new ConfigManager.KeyBind("", key);
+                                                                setConfig(config);
+
+                                                                context.getSource().sendFeedback(Text.literal("§aУстановлена клавиша остановки навигации: §e" + config.alternative_navigation.end_navigation.getDisplayName()));
+                                                                return 1;
+                                                            })
+                                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("modifier", StringArgumentType.string())
+                                                                    .suggests((context, builder) -> {
+                                                                        for (String keyName : KeyBindings.getAllKeyNames()) {
+                                                                            builder.suggest(keyName);
+                                                                        }
+                                                                        return builder.buildFuture();
+                                                                    })
+                                                                    .executes(context -> {
+                                                                        // Клавиша + модификатор
+                                                                        String key = StringArgumentType.getString(context, "key");
+                                                                        String modifier = StringArgumentType.getString(context, "modifier");
+
+                                                                        Config config = getConfig();
+                                                                        config.alternative_navigation.end_navigation = new ConfigManager.KeyBind(modifier, key);
+                                                                        setConfig(config);
+
+                                                                        context.getSource().sendFeedback(Text.literal("§aУстановлена клавиша остановки навигации: §e" + config.alternative_navigation.end_navigation.getDisplayName()));
+                                                                        return 1;
+                                                                    })
+                                                            )
+                                                    )
+                                            )
+                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("show")
+                                                    .executes(context -> {
+                                                        Config config = getConfig();
+                                                        context.getSource().sendFeedback(Text.literal("§6=== НАСТРОЙКИ КЛАВИШ ==="));
+                                                        context.getSource().sendFeedback(Text.literal("§aБыстрый магазин: §e" + config.quick_shop.getDisplayName() + " §7(используется: " + (config.use_quick_shop ? "§aда" : "§cнет") + "§7)"));
+                                                        context.getSource().sendFeedback(Text.literal("§aАльтернативная навигация: §e" + (config.use_alternative_navigation ? "включена" : "отключена")));
+                                                        if (config.use_alternative_navigation) {
+                                                            context.getSource().sendFeedback(Text.literal("  §aСледующая группа: §e" + config.alternative_navigation.next_group.getDisplayName()));
+                                                            context.getSource().sendFeedback(Text.literal("  §aПредыдущая группа: §e" + config.alternative_navigation.previous_group.getDisplayName()));
+                                                            context.getSource().sendFeedback(Text.literal("  §aОстановка навигации: §e" + config.alternative_navigation.end_navigation.getDisplayName()));
+                                                        }
+                                                        return 1;
+                                                    })
                                             )
                                     )
-                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("show")
-                                            .executes(context -> {
-                                                Config config = getConfig();
-                                                context.getSource().sendFeedback(Text.literal("§6=== НАСТРОЙКИ КЛАВИШ ==="));
-                                                context.getSource().sendFeedback(Text.literal("§aБыстрый магазин: §e" + config.quick_shop.getDisplayName() + " §7(используется: " + (config.use_quick_shop ? "§aда" : "§cнет") + "§7)"));
-                                                context.getSource().sendFeedback(Text.literal("§aАльтернативная навигация: §e" + (config.use_alternative_navigation ? "включена" : "отключена")));
-                                                if (config.use_alternative_navigation) {
-                                                    context.getSource().sendFeedback(Text.literal("  §aСледующая группа: §e" + config.alternative_navigation.next_group.getDisplayName()));
-                                                    context.getSource().sendFeedback(Text.literal("  §aПредыдущая группа: §e" + config.alternative_navigation.previous_group.getDisplayName()));
-                                                    context.getSource().sendFeedback(Text.literal("  §aОстановка навигации: §e" + config.alternative_navigation.end_navigation.getDisplayName()));
-                                                }
-                                                return 1;
-                                            })
-                                    )
+
                             )
                             .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("show")
                                     .executes(context -> {

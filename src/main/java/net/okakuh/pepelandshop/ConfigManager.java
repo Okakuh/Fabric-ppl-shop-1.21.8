@@ -1,4 +1,3 @@
-// ConfigManager.java
 package net.okakuh.pepelandshop;
 
 import com.google.gson.Gson;
@@ -78,7 +77,7 @@ public class ConfigManager {
         }
 
         public String getCombo() {
-            if (modifier.isEmpty()) {
+            if (modifier == null || modifier.isEmpty()) {
                 return key;
             } else {
                 return modifier + "+" + key;
@@ -86,7 +85,7 @@ public class ConfigManager {
         }
 
         public String getDisplayName() {
-            if (modifier.isEmpty()) {
+            if (modifier == null || modifier.isEmpty()) {
                 return KeyBindings.getDisplayName(key);
             } else {
                 return KeyBindings.getDisplayName(modifier) + " + " + KeyBindings.getDisplayName(key);
