@@ -113,15 +113,8 @@ public class NavigationManager {
 
         if (currentGroupIndex < currentPriceKeys.size() - 1) {
             currentGroupIndex++;
-            highlightCurrentGroup();
-        } else {
-            if (MinecraftClient.getInstance().player != null) {
-                MinecraftClient.getInstance().player.sendMessage(
-                        Text.literal("§6➡ Достигнута последняя группа"),
-                        true
-                );
-            }
         }
+        highlightCurrentGroup();
     }
 
     private static void previousGroup() {
@@ -129,15 +122,8 @@ public class NavigationManager {
 
         if (currentGroupIndex > 0) {
             currentGroupIndex--;
-            highlightCurrentGroup();
-        } else {
-            if (MinecraftClient.getInstance().player != null) {
-                MinecraftClient.getInstance().player.sendMessage(
-                        Text.literal("§6⬅ Достигнута первая группа"),
-                        true
-                );
-            }
         }
+        highlightCurrentGroup();
     }
 
     private static void stopNavigation() {
