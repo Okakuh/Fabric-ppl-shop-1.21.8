@@ -3,11 +3,13 @@ package net.okakuh.pepelandshop.config;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.DyeColor;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class ConfigHelper {
     private static final ConfigManager.Config CONFIG = ConfigManager.getConfig();
+    private static final ConfigManager.Config DEFAULT_CONFIG = ConfigManager.getDefaultConfig();
 
     // === Радиус поиска ===
     public static int getSearchRadius() {
@@ -32,12 +34,12 @@ public class ConfigHelper {
     // === Y координаты ===
     public static int getMinY() {
         List<Integer> yCoords = CONFIG.y_coords;
-        return yCoords.size() > 0 ? yCoords.get(0) : 0;
+        return yCoords.size() > 0 ? yCoords.get(0) : DEFAULT_CONFIG.y_coords.get(0);
     }
 
     public static int getMaxY() {
         List<Integer> yCoords = CONFIG.y_coords;
-        return yCoords.size() > 1 ? yCoords.get(1) : 3;
+        return yCoords.size() > 1 ? yCoords.get(1) : DEFAULT_CONFIG.y_coords.get(1);
     }
 
     public static void setYCoords(int minY, int maxY) {
@@ -54,7 +56,7 @@ public class ConfigHelper {
     }
 
     public static void setPricePattern(String pattern) {
-        CONFIG.price_pattern = pattern != null ? pattern : "\\d+\\s*а[а-яё]{1}";
+        CONFIG.price_pattern = pattern != null ? pattern : DEFAULT_CONFIG.price_pattern;
         ConfigManager.setConfig(CONFIG);
     }
 
@@ -63,7 +65,7 @@ public class ConfigHelper {
     }
 
     public static void setAmountPattern(String pattern) {
-        CONFIG.amount_pattern = pattern != null ? pattern : "\\d+\\s*[а-яё]{2}";
+        CONFIG.amount_pattern = pattern != null ? pattern : DEFAULT_CONFIG.amount_pattern;
         ConfigManager.setConfig(CONFIG);
     }
 
@@ -71,13 +73,13 @@ public class ConfigHelper {
 
     public static Formatting getFirstHighlightFormatting() {
         List<String> colors = CONFIG.highlight_colors;
-        String firstColor = colors.size() > 0 ? colors.get(0) : "green";
+        String firstColor = colors.size() > 0 ? colors.get(0) :  DEFAULT_CONFIG.highlight_colors.get(0);
         return convertColorNameToFormatting(firstColor);
     }
 
     public static Formatting getSecondHighlightFormatting() {
         List<String> colors = CONFIG.highlight_colors;
-        String secondColor = colors.size() > 1 ? colors.get(1) : "blue";
+        String secondColor = colors.size() > 1 ? colors.get(1) :  DEFAULT_CONFIG.highlight_colors.get(1);
         return convertColorNameToFormatting(secondColor);
     }
 
@@ -179,18 +181,19 @@ public class ConfigHelper {
     }
 
     // === Полная валидация конфига ===
+    // В методе validateAndFixConfig используем дефолтные значения
     public static void validateAndFixConfig() {
         // Радиус
-        if (CONFIG.default_radius < 1) CONFIG.default_radius = 40;
+        if (CONFIG.default_radius < 1) CONFIG.default_radius = DEFAULT_CONFIG.default_radius;
         if (CONFIG.default_radius > 1000) CONFIG.default_radius = 1000;
 
         // Размер стака
-        if (CONFIG.default_stack < 1) CONFIG.default_stack = 1;
-        if (CONFIG.default_stack > 64) CONFIG.default_stack = 64;
+        if (CONFIG.default_stack < 1) CONFIG.default_stack = DEFAULT_CONFIG.default_stack;
+        if (CONFIG.default_stack > 64) CONFIG.default_stack = DEFAULT_CONFIG.default_stack;
 
         // Y координаты
         if (CONFIG.y_coords == null || CONFIG.y_coords.size() != 2) {
-            CONFIG.y_coords = Arrays.asList(0, 3);
+            CONFIG.y_coords = new ArrayList<>(DEFAULT_CONFIG.y_coords);
         } else {
             int minY = Math.max(-64, Math.min(319, CONFIG.y_coords.get(0)));
             int maxY = Math.max(-64, Math.min(319, CONFIG.y_coords.get(1)));
@@ -200,30 +203,34 @@ public class ConfigHelper {
 
         // Паттерны
         if (CONFIG.price_pattern == null || CONFIG.price_pattern.trim().isEmpty()) {
-            CONFIG.price_pattern = "\\d+\\s*а[а-яё]{1}";
+            CONFIG.price_pattern = DEFAULT_CONFIG.price_pattern;
         }
         if (CONFIG.amount_pattern == null || CONFIG.amount_pattern.trim().isEmpty()) {
-            CONFIG.amount_pattern = "\\d+\\s*[а-яё]{2}";
+            CONFIG.amount_pattern = DEFAULT_CONFIG.amount_pattern;
         }
 
         // Цвета
         if (CONFIG.highlight_colors == null || CONFIG.highlight_colors.size() != 2) {
-            CONFIG.highlight_colors = Arrays.asList("green", "blue");
+            CONFIG.highlight_colors = new ArrayList<>(DEFAULT_CONFIG.highlight_colors);
         } else {
             CONFIG.highlight_colors.set(0, validateColorName(CONFIG.highlight_colors.get(0)));
             CONFIG.highlight_colors.set(1, validateColorName(CONFIG.highlight_colors.get(1)));
         }
 
-        ConfigManager.setConfig(CONFIG);
+        // Быстрый магазин
+        if (CONFIG.quick_shop_message == null || CONFIG.quick_shop_message.trim().isEmpty()) {
+            CONFIG.quick_shop_message = DEFAULT_CONFIG.quick_shop_message;
+        }
+
+        ConfigManager.saveConfig();
     }
 
-    // === Сообщение быстрого магазина ===
     public static String getQuickShopMessage() {
-        return CONFIG.quick_shop_message != null ? CONFIG.quick_shop_message : "/shop 64 ";
+        return CONFIG.quick_shop_message != null ? CONFIG.quick_shop_message : DEFAULT_CONFIG.quick_shop_message;
     }
 
     public static void setQuickShopMessage(String message) {
-        CONFIG.quick_shop_message = message != null ? message : "/shop 64 ";
+        CONFIG.quick_shop_message = message != null ? message : DEFAULT_CONFIG.quick_shop_message;
         ConfigManager.saveConfig();
     }
 

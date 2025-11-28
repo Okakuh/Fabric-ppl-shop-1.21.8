@@ -36,6 +36,18 @@ public class ConfigManager {
         public KeyBindConfig quick_shop = new KeyBindConfig("s", "left_alt");
     }
 
+    private static Config createDefaultConfig() {
+        Config defaultConfig = new Config();
+        // Все значения уже установлены в классе Config по умолчанию
+        return defaultConfig;
+    }
+
+    // ДОБАВЛЯЕМ МЕТОД ДЛЯ ПОЛУЧЕНИЯ ДЕФОЛТНОГО КОНФИГА
+    public static Config getDefaultConfig() {
+        // Создаем новый экземпляр, чтобы избежать изменений оригинала
+        return createDefaultConfig();
+    }
+
     public static class KeyBindConfig {
         public String main_key;
         public String modifier_key; // может быть null
