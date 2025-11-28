@@ -1,5 +1,4 @@
-// KeyBindings.java
-package net.okakuh.pepelandshop;
+package net.okakuh.pepelandshop.util;
 
 import net.minecraft.client.util.InputUtil;
 
@@ -149,6 +148,16 @@ public class KeyBindings {
         return -1; // Не найдено
     }
 
+    // Метод для получения имени клавиши по коду
+    public static String getKeyName(int keyCode) {
+        for (String[] key : ALL_KEYS) {
+            if (Integer.parseInt(key[2]) == keyCode) {
+                return key[0];
+            }
+        }
+        return null; // Не найдено
+    }
+
     // Метод для получения отображаемого имени клавиши
     public static String getDisplayName(String keyName) {
         for (String[] key : ALL_KEYS) {
@@ -159,6 +168,12 @@ public class KeyBindings {
         return keyName; // Возвращаем исходное имя, если не найдено
     }
 
+    // Метод для получения отображаемого имени по коду
+    public static String getDisplayName(int keyCode) {
+        String keyName = getKeyName(keyCode);
+        return keyName != null ? getDisplayName(keyName) : "Unknown";
+    }
+
     // Метод для получения списка всех имен клавиш
     public static List<String> getAllKeyNames() {
         List<String> names = new ArrayList<>();
@@ -167,5 +182,4 @@ public class KeyBindings {
         }
         return names;
     }
-
 }

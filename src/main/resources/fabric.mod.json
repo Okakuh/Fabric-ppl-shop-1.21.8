@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "id": "pepelandshop",
-  "version": "1.0.0",
+  "version": "${version}",
   "name": "Pepeland Shop",
-  "description": "Мод для поиска магазинов",
-  "authors": ["You"],
+  "description": "Мод для поиска и навигации по магазинам в Pepeland",
+  "authors": ["YourName"],
   "contact": {},
   "license": "MIT",
   "icon": "assets/pepelandshop/icon.png",
