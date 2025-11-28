@@ -225,9 +225,8 @@ public class ConfigCommands {
 
     private static void showKeyBindsHelp(CommandContext<FabricClientCommandSource> context) {
         var source = context.getSource();
-        source.sendFeedback(Text.literal("§6=== Настройка клавиш PepelandShop ==="));
         source.sendFeedback(Text.literal("§e/shop_config keybinds show §7- показать текущие настройки"));
-        source.sendFeedback(Text.literal("§e/shop_config keybinds set <функция> §7- установить клавишу для функции"));
+        source.sendFeedback(Text.literal("§e/shop_config keybinds set <функция> §7- установить кнопку для функции"));
         source.sendFeedback(Text.literal("§e/shop_config keybinds reset §7- сбросить клавиши к значениям по умолчанию"));
         source.sendFeedback(Text.literal(""));
         source.sendFeedback(Text.literal("§6Доступные функции:"));
@@ -236,12 +235,14 @@ public class ConfigCommands {
         source.sendFeedback(Text.literal("§e- end_navigation §7- завершить навигацию"));
         source.sendFeedback(Text.literal("§e- quick_shop §7- быстрый магазин"));
         source.sendFeedback(Text.literal(""));
-        source.sendFeedback(Text.literal("§6Инструкция:"));
-        source.sendFeedback(Text.literal("§7- Нажмите кнопку 1"));
-        source.sendFeedback(Text.literal("§7- Нажмите §eSPACE§7 для установки одной кнопки"));
-        source.sendFeedback(Text.literal("§7- Или нажмите §eкнопку 2§7 для комбинации"));
-        source.sendFeedback(Text.literal("§7- Повторные нажатия той же кнопки игнорируются"));
-        source.sendFeedback(Text.literal("§6====================================="));
+        source.sendFeedback(Text.literal("§6Инструкция: "));
+        source.sendFeedback(Text.literal("§7- Вы можете настроить одну кнопку, или комбинацию из 2 кнопок"));
+        source.sendFeedback(Text.literal("§7- Введите команду: например /shop_config keybinds quick_shop"));
+        source.sendFeedback(Text.literal("§7- Запуститься запись клавиатуры"));
+        source.sendFeedback(Text.literal("§6- Чтобы установить одну кнопку"));
+        source.sendFeedback(Text.literal("§7- Нажмите эту кнопку + пробел"));
+        source.sendFeedback(Text.literal("§6- Чтобы установить кобминацию"));
+        source.sendFeedback(Text.literal("§7- Нажмите комбинацию из 2 кнопок"));
     }
 
     private static int showCurrentKeyBinds(CommandContext<FabricClientCommandSource> context) {

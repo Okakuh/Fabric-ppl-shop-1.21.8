@@ -34,7 +34,7 @@ public class Configs {
         public KeyBindConfig group_next = new KeyBindConfig("up", null);
         public KeyBindConfig group_previous = new KeyBindConfig("down", null);
         public KeyBindConfig end_navigation = new KeyBindConfig("backspace", null);
-        public KeyBindConfig quick_shop = new KeyBindConfig("s", "left_alt");
+        public KeyBindConfig quick_shop = new KeyBindConfig("w", "left_alt");
     }
 
     private static Config createDefaultConfig() {
