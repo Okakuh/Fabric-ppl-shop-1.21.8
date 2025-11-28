@@ -29,32 +29,22 @@ public class PepelandShopClient implements ClientModInitializer {
 
             // Если идет запись клавиш
             if (KeyBindManager.isRecording()) {
-                // Просто обрабатываем запись
-                for (int keyCode = GLFW.GLFW_KEY_SPACE; keyCode <= GLFW.GLFW_KEY_LAST; keyCode++) {
-                    if (GLFW.glfwGetKey(client.getWindow().getHandle(), keyCode) == GLFW.GLFW_PRESS) {
-                        KeyBindManager.handleKeyInput(keyCode, GLFW.GLFW_PRESS);
-                        break;
-                    }
-                }
+                consumeAllKeysForRecording(client);
             } else {
-                // Обычная логика - Mixin сам перехватит клавиши
+                // Обычная логика навигации
                 NavigationManager.handleKeyNavigation(client);
                 NavigationManager.handleQuickShop(client);
             }
         });
     }
 
-    private static boolean shouldConsumeInput() {
-        // Проверяем, нажата ли любая из наших клавиш
-        return KeyBindManager.isPressed("group_next") ||
-                KeyBindManager.isPressed("group_previous") ||
-                KeyBindManager.isPressed("end_navigation") ||
-                KeyBindManager.isPressed("quick_shop");
-    }
-
-    private static void consumeKeyEvents(net.minecraft.client.MinecraftClient client) {
-        // Перехватываем события клавиш, чтобы они не доходили до Minecraft
-        // Это предотвратит выполнение стандартных действий Minecraft
-        // Например, если R назначена на быстрый магазин, она не будет открывать инвентарь
+    private static void consumeAllKeysForRecording(net.minecraft.client.MinecraftClient client) {
+        // Во время записи перехватываем все клавиши
+        for (int keyCode = GLFW.GLFW_KEY_SPACE; keyCode <= GLFW.GLFW_KEY_LAST; keyCode++) {
+            if (GLFW.glfwGetKey(client.getWindow().getHandle(), keyCode) == GLFW.GLFW_PRESS) {
+                KeyBindManager.handleKeyInput(keyCode, GLFW.GLFW_PRESS);
+                break; // Обрабатываем только одну клавишу за тик
+            }
+        }
     }
 }

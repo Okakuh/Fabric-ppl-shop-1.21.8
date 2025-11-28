@@ -11,40 +11,6 @@ public class KeyBindManager {
     private static long recordingStartTime = 0;
     private static final long INITIAL_DELAY = 300;
 
-    // Метод для проверки, нужно ли перехватить клавишу
-    public static boolean shouldConsumeKey(int keyCode) {
-        if (isRecording()) {
-            return true; // Всегда перехватываем во время записи
-        }
-
-        // Получаем имя клавиши по коду
-        String keyName = KeyBindings.getKeyName(keyCode);
-        if (keyName == null) return false;
-
-        // Проверяем все наши конфигурации клавиш
-        Map<String, ConfigManager.KeyBindConfig> allConfigs = getAllKeyBindConfigs();
-
-        for (ConfigManager.KeyBindConfig config : allConfigs.values()) {
-            // Проверяем основную клавишу
-            if (keyName.equals(config.main_key)) {
-                return true;
-            }
-            // Проверяем модификатор (если есть)
-            if (config.hasModifier() && keyName.equals(config.modifier_key)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    // Метод для проверки активной комбинации
-    public static boolean isAnyKeyBindActive() {
-        return isPressed("group_next") ||
-                isPressed("group_previous") ||
-                isPressed("end_navigation") ||
-                isPressed("quick_shop");
-    }
     // Простые методы проверки нажатий через GLFW
     public static boolean isPressed(String keyBindId) {
         ConfigManager.KeyBindConfig config = getKeyBindConfig(keyBindId);
