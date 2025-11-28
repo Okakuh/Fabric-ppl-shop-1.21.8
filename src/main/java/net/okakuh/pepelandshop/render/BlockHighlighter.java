@@ -8,21 +8,19 @@ import net.minecraft.util.DyeColor;
 import net.minecraft.util.math.BlockPos;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL14;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class BlockHighlighter {
     private static List<BlockPos> highlightedBlocks = new ArrayList<>();
-    private static int highlightColor1 = 0x80FFFFFF;
-    private static int highlightColor2 = 0x80FFFFFF;
+    private static int highlightColor1 = 0xFFFFFFFF;
+    private static int highlightColor2 = 0xFFFFFFFF;
 
     public static void highlightBlocks(List<BlockPos> blocks, DyeColor color1, DyeColor color2) {
         highlightedBlocks = new ArrayList<>(blocks);
-        int alpha = 0xCC;
-        highlightColor1 = (alpha << 24) | (color1.getEntityColor() & 0x00FFFFFF);
-        highlightColor2 = (alpha << 24) | (color2.getEntityColor() & 0x00FFFFFF);
+        highlightColor1 = color1.getEntityColor() | 0xFF000000;
+        highlightColor2 = color2.getEntityColor() | 0xFF000000;
     }
 
     public static void clearHighlights() {
@@ -40,84 +38,60 @@ public class BlockHighlighter {
         stack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
         final Matrix4f model = stack.peek().getPositionMatrix();
 
-        // Сохраняем состояние GL
-        int depthFunc = GL11.glGetInteger(GL11.GL_DEPTH_FUNC);
-        boolean depthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
-        boolean blendEnabled = GL11.glGetBoolean(GL11.GL_BLEND);
-
-        // Отключаем depth test и запись в Z-буфер
+        // Сохраняем состояние depth test
+        boolean depthTestEnabled = GL11.glGetBoolean(GL11.GL_DEPTH_TEST);
         GL11.glDisable(GL11.GL_DEPTH_TEST);
-        GL11.glDepthMask(false);
-        GL11.glEnable(GL11.GL_BLEND);
-        GL14.glBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
 
-        var buffer = bufferSource.getBuffer(RenderLayer.getDebugQuads());
+        GL11.glLineWidth(10.0f);
+
+        var buffer = bufferSource.getBuffer(RenderLayer.getLines());
+
         for (BlockPos blockPos : highlightedBlocks) {
-            renderFilledCube(model, buffer, blockPos);
+            renderBlockOutline(model, buffer, blockPos);
         }
 
         ((VertexConsumerProvider.Immediate) bufferSource).draw();
 
-        // Восстанавливаем состояние GL
-        GL11.glDepthFunc(depthFunc);
-        GL11.glDepthMask(depthMask);
-        GL11.glEnable(GL11.GL_DEPTH_TEST);
-        if (!blendEnabled) {
-            GL11.glDisable(GL11.GL_BLEND);
+        GL11.glLineWidth(1.0f);
+
+        // Восстанавливаем depth test
+        if (depthTestEnabled) {
+            GL11.glEnable(GL11.GL_DEPTH_TEST);
         }
 
         stack.pop();
     }
 
-    private static void renderFilledCube(Matrix4f model, VertexConsumer buf, BlockPos pos) {
-        float minX = pos.getX();
-        float minY = pos.getY();
-        float minZ = pos.getZ();
-        float maxX = pos.getX() + 1f;
-        float maxY = pos.getY() + 1f;
-        float maxZ = pos.getZ() + 1f;
+    private static void renderBlockOutline(Matrix4f model, VertexConsumer buffer, BlockPos pos) {
+        double minX = pos.getX();
+        double minY = pos.getY();
+        double minZ = pos.getZ();
+        double maxX = pos.getX() + 1;
+        double maxY = pos.getY() + 1;
+        double maxZ = pos.getZ() + 1;
 
-        int c = highlightColor1;
-        int a = (c >> 24) & 0xFF;
-        int r = (c >> 16) & 0xFF;
-        int g = (c >> 8) & 0xFF;
-        int b = c & 0xFF;
+        // Нижняя грань (4 линии)
+        addLine(buffer, model, minX, minY, minZ, maxX, minY, minZ, highlightColor1, interpolateColor(highlightColor1, highlightColor2, 0.5f));
+        addLine(buffer, model, maxX, minY, minZ, maxX, minY, maxZ, interpolateColor(highlightColor1, highlightColor2, 0.5f), highlightColor2);
+        addLine(buffer, model, maxX, minY, maxZ, minX, minY, maxZ, highlightColor2, interpolateColor(highlightColor1, highlightColor2, 0.5f));
+        addLine(buffer, model, minX, minY, maxZ, minX, minY, minZ, interpolateColor(highlightColor1, highlightColor2, 0.5f), highlightColor1);
 
-        // Фронтальная грань (minZ)
-        buf.vertex(model, minX, minY, minZ).color(r, g, b, a);
-        buf.vertex(model, maxX, minY, minZ).color(r, g, b, a);
-        buf.vertex(model, maxX, maxY, minZ).color(r, g, b, a);
-        buf.vertex(model, minX, maxY, minZ).color(r, g, b, a);
+        // Верхняя грань (4 линии)
+        addLine(buffer, model, minX, maxY, minZ, maxX, maxY, minZ, interpolateColor(highlightColor1, highlightColor2, 0.5f), interpolateColor(highlightColor1, highlightColor2, 0.5f));
+        addLine(buffer, model, maxX, maxY, minZ, maxX, maxY, maxZ, interpolateColor(highlightColor1, highlightColor2, 0.5f), highlightColor2);
+        addLine(buffer, model, maxX, maxY, maxZ, minX, maxY, maxZ, highlightColor2, interpolateColor(highlightColor1, highlightColor2, 0.5f));
+        addLine(buffer, model, minX, maxY, maxZ, minX, maxY, minZ, interpolateColor(highlightColor1, highlightColor2, 0.5f), interpolateColor(highlightColor1, highlightColor2, 0.5f));
 
-        // Задняя грань (maxZ)
-        buf.vertex(model, minX, minY, maxZ).color(r, g, b, a);
-        buf.vertex(model, minX, maxY, maxZ).color(r, g, b, a);
-        buf.vertex(model, maxX, maxY, maxZ).color(r, g, b, a);
-        buf.vertex(model, maxX, minY, maxZ).color(r, g, b, a);
+        // Вертикальные ребра (4 линии)
+        addLine(buffer, model, minX, minY, minZ, minX, maxY, minZ, highlightColor1, interpolateColor(highlightColor1, highlightColor2, 0.5f));
+        addLine(buffer, model, maxX, minY, minZ, maxX, maxY, minZ, interpolateColor(highlightColor1, highlightColor2, 0.5f), interpolateColor(highlightColor1, highlightColor2, 0.5f));
+        addLine(buffer, model, maxX, minY, maxZ, maxX, maxY, maxZ, highlightColor2, highlightColor2);
+        addLine(buffer, model, minX, minY, maxZ, minX, maxY, maxZ, interpolateColor(highlightColor1, highlightColor2, 0.5f), interpolateColor(highlightColor1, highlightColor2, 0.5f));
+    }
 
-        // Левый (minX)
-        buf.vertex(model, minX, minY, minZ).color(r, g, b, a);
-        buf.vertex(model, minX, minY, maxZ).color(r, g, b, a);
-        buf.vertex(model, minX, maxY, maxZ).color(r, g, b, a);
-        buf.vertex(model, minX, maxY, minZ).color(r, g, b, a);
-
-        // Правый (maxX)
-        buf.vertex(model, maxX, minY, minZ).color(r, g, b, a);
-        buf.vertex(model, maxX, maxY, minZ).color(r, g, b, a);
-        buf.vertex(model, maxX, maxY, maxZ).color(r, g, b, a);
-        buf.vertex(model, maxX, minY, maxZ).color(r, g, b, a);
-
-        // Нижняя (minY)
-        buf.vertex(model, minX, minY, minZ).color(r, g, b, a);
-        buf.vertex(model, maxX, minY, minZ).color(r, g, b, a);
-        buf.vertex(model, maxX, minY, maxZ).color(r, g, b, a);
-        buf.vertex(model, minX, minY, maxZ).color(r, g, b, a);
-
-        // Верхняя (maxY)
-        buf.vertex(model, minX, maxY, minZ).color(r, g, b, a);
-        buf.vertex(model, minX, maxY, maxZ).color(r, g, b, a);
-        buf.vertex(model, maxX, maxY, maxZ).color(r, g, b, a);
-        buf.vertex(model, maxX, maxY, minZ).color(r, g, b, a);
+    private static void addLine(VertexConsumer buffer, Matrix4f model, double x1, double y1, double z1, double x2, double y2, double z2, int color1, int color2) {
+        buffer.vertex(model, (float) x1, (float) y1, (float) z1).normal(0f, 1f, 0f).color(color1);
+        buffer.vertex(model, (float) x2, (float) y2, (float) z2).normal(0f, 1f, 0f).color(color2);
     }
 
     private static int interpolateColor(int color1, int color2, float factor) {
