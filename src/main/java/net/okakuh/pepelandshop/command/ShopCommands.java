@@ -121,16 +121,7 @@ public class ShopCommands {
         // Остановка навигации
         source.sendFeedback(Text.literal("§e" + config.end_navigation + " §7- завершить навигацию"));
 
-        // Быстрый магазин
-        source.sendFeedback(Text.literal("§e" + config.quick_shop + " §7- быстрый магазин"));
 
         source.sendFeedback(Text.literal("§6=================="));
-    }
-
-    private static String getKeyBindDisplay(net.okakuh.pepelandshop.config.ConfigManager.KeyBindConfig keyBindConfig) {
-        if (keyBindConfig == null) {
-            return "§cНе назначена";
-        }
-        return "§e" + keyBindConfig.toString();
     }
 }

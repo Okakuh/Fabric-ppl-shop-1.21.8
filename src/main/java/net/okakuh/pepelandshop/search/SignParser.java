@@ -28,7 +28,6 @@ public class SignParser {
 
         if (allLinesLower.contains("бесплат")) {
             resultPrice = -1;
-            originalPrice = -1;
         } else {
             List<String> foundPricesPatterns = regexFindAll(allLinesLower, pricePattern);
             int countPrices = foundPricesPatterns.size();
@@ -37,7 +36,6 @@ public class SignParser {
                 String foundPriceStr = foundPricesPatterns.get(0);
                 int price = parsePriceValue(foundPriceStr);
                 resultPrice = price;
-                originalPrice = price;
 
                 String textWithoutPrice = allLinesLower.replace(foundPriceStr, "");
                 List<String> foundAmountPatterns = regexFindAll(textWithoutPrice, amountPattern);
@@ -48,34 +46,34 @@ public class SignParser {
                 }
 
             } else if (countPrices == 2) {
-                String firstPriceStr = foundPricesPatterns.get(0);
-                String secondPriceStr = foundPricesPatterns.get(1);
+                double lastPricePerUnit = 0;
+                for (String line : signLines) {
+                    List<String> linePricePatterns = regexFindAll(line.toLowerCase(), pricePattern);
 
-                int firstPrice = parsePriceValue(firstPriceStr);
-                int secondPrice = parsePriceValue(secondPriceStr);
+                    if (!linePricePatterns.isEmpty()) {
+                        String foundPriceStr = linePricePatterns.get(0);
+                        int price = parsePriceValue(foundPriceStr);
+                        resultPrice = price;
 
-                List<String> foundAmountPatterns = regexFindAll(allLinesLower, amountPattern);
+                        String textWithoutPrice = allLinesLower.replace(foundPriceStr, "");
+                        List<String> foundAmountPatterns = regexFindAll(textWithoutPrice, amountPattern);
 
-                if (foundAmountPatterns.size() == 1) {
-                    String amountStr = foundAmountPatterns.get(0);
-                    int amount = parseAmountValue(amountStr, stackAmount);
+                        if (!foundAmountPatterns.isEmpty()) {
+                            int amount = parseAmountValue(foundAmountPatterns.get(0), stackAmount);
+                            resultAmount = amount;
 
-                    if (firstPrice < secondPrice) {
-                        resultPrice = firstPrice;
-                        resultAmount = secondPrice / firstPrice;
-                        originalPrice = firstPrice;
-                    } else {
-                        resultPrice = secondPrice;
-                        resultAmount = firstPrice / secondPrice;
-                        originalPrice = secondPrice;
+                            double calculatedPricePerUnit = (double) price / amount;
+
+                            if (lastPricePerUnit == 0) {
+                                lastPricePerUnit = calculatedPricePerUnit;
+                                resultPrice = price;
+                                resultAmount = amount;
+                            } else if (calculatedPricePerUnit < lastPricePerUnit) {
+                                resultPrice = price;
+                                resultAmount = amount;
+                            }
+                        }
                     }
-
-                    if (amount > 1) {
-                        resultAmount = amount;
-                    }
-                } else {
-                    resultPrice = Math.min(firstPrice, secondPrice);
-                    originalPrice = (int) resultPrice;
                 }
             }
         }
@@ -84,6 +82,7 @@ public class SignParser {
             resultAmount = 1;
         }
 
+        originalPrice = (int) resultPrice;
         double finalPricePerUnit = (double) resultPrice / resultAmount;
         return new ParsedSignInfo(finalPricePerUnit, originalPrice, resultAmount);
     }
