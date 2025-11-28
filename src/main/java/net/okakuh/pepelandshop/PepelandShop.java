@@ -10,7 +10,5 @@ public class PepelandShop implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        LOGGER.info("Pepeland Shop mod initialized!");
-        // Серверная логика (если нужна) здесь
     }
 }

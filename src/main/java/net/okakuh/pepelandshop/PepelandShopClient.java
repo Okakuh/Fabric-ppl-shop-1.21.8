@@ -7,6 +7,7 @@ import net.okakuh.pepelandshop.commands.ShopCommands;
 import net.okakuh.pepelandshop.commands.ConfigCommands;
 import net.okakuh.pepelandshop.managers.KeyBindManager;
 import net.okakuh.pepelandshop.managers.NavigationManager;
+import net.okakuh.pepelandshop.render.BlockHighlighter;
 import org.lwjgl.glfw.GLFW;
 
 import static net.okakuh.pepelandshop.Configs.*;
@@ -19,9 +20,7 @@ public class PepelandShopClient implements ClientModInitializer {
         ConfigCommands.registerCommands();
         ShopCommands.registerCommands();
 
-        WorldRenderEvents.AFTER_TRANSLUCENT.register(context -> {
-            net.okakuh.pepelandshop.render.BlockHighlighter.render(context);
-        });
+        WorldRenderEvents.AFTER_TRANSLUCENT.register(BlockHighlighter::render);
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null || client.currentScreen != null) return;
