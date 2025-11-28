@@ -30,21 +30,6 @@ public class ShopCommands {
                             )
                     )
             );
-            // Команда /shop_radius
-            dispatcher.register(literal("shop_radius")
-                    .then(argument("radius", IntegerArgumentType.integer(1))
-                            .then(argument("stack", IntegerArgumentType.integer(1, 64))
-                                    .then(argument("search_pattern", StringArgumentType.greedyString())
-                                            .executes(context -> {
-                                                int radius = IntegerArgumentType.getInteger(context, "radius");
-                                                int stack = IntegerArgumentType.getInteger(context, "stack");
-                                                String searchPattern = StringArgumentType.getString(context, "search_pattern");
-                                                return executeShop(context, searchPattern, stack, radius, false);
-                                            })
-                                    )
-                            )
-                    )
-            );
             // Команда /shop_rgx
             dispatcher.register(literal("shop_rgx")
                     .then(argument("stack", IntegerArgumentType.integer(1, 64))
@@ -58,21 +43,6 @@ public class ShopCommands {
                             )
                     )
             );
-            // Команда /shop_rgx_radius
-            dispatcher.register(literal("shop_rgx_radius")
-                    .then(argument("radius", IntegerArgumentType.integer(1))
-                            .then(argument("stack", IntegerArgumentType.integer(1, 64))
-                                    .then(argument("regex_pattern", StringArgumentType.greedyString())
-                                            .executes(context -> {
-                                                int radius = IntegerArgumentType.getInteger(context, "radius");
-                                                int stack = IntegerArgumentType.getInteger(context, "stack");
-                                                String regexPattern = StringArgumentType.getString(context, "regex_pattern");
-                                                return executeShop(context, regexPattern, stack, radius, true);
-                                            })
-                                    )
-                            )
-                    )
-            );
         });
     }
 
@@ -80,16 +50,10 @@ public class ShopCommands {
                                    String pattern, int stack, int radius, boolean useRegex) {
         var source = context.getSource();
 
-        // Выводим параметры поиска
-        if (useRegex) {
-            source.sendFeedback(Text.literal("§aRegex патерн: §f" + pattern));
-        } else {
-            source.sendFeedback(Text.literal("§aПатерн поиска: §f" + pattern));
-        }
+        source.sendFeedback(Text.literal("§aПатерн: §f" + pattern));
         source.sendFeedback(Text.literal("§aРазмер стака: §f" + stack));
         source.sendFeedback(Text.literal("§aРадиус: §f" + radius));
 
-        // Используем ShopFinder для поиска табличек
         var foundSigns = SignFinder.findSignsAroundPlayer(source, radius, pattern, useRegex);
         source.sendFeedback(Text.literal("§6Найдено табличек: §e" + foundSigns.size()));
 
@@ -121,7 +85,6 @@ public class ShopCommands {
 
         // Остановка навигации
         source.sendFeedback(Text.literal("§e" + config.end_navigation + " §7- завершить навигацию"));
-
 
         source.sendFeedback(Text.literal("§6================"));
     }

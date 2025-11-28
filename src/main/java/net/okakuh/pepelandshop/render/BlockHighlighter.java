@@ -42,8 +42,8 @@ public class BlockHighlighter {
 
     public static void highlightBlocks(List<BlockPos> blocks, DyeColor color1, DyeColor color2) {
         highlightedBlocks = new ArrayList<>(blocks);
-        highlightColor1 = color1.getEntityColor() | 0xFF000000;
-        highlightColor2 = color2.getEntityColor() | 0xFF000000;
+        highlightColor1 = color1.getEntityColor();
+        highlightColor2 = color2.getEntityColor();
     }
 
     public static void clearHighlights() {

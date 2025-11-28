@@ -39,22 +39,18 @@ public class Configs {
 
     private static Config createDefaultConfig() {
         Config defaultConfig = new Config();
-        // Все значения уже установлены в классе Config по умолчанию
         return defaultConfig;
     }
 
-    // ДОБАВЛЯЕМ МЕТОД ДЛЯ ПОЛУЧЕНИЯ ДЕФОЛТНОГО КОНФИГА
     public static Config getDefaultConfig() {
-        // Создаем новый экземпляр, чтобы избежать изменений оригинала
         return createDefaultConfig();
     }
 
     public static class KeyBindConfig {
         public String main_key;
-        public String modifier_key; // может быть null
+        public String modifier_key; //
 
         public KeyBindConfig() {
-            // Конструктор для GSON
         }
 
         public KeyBindConfig(String main_key, String modifier_key) {

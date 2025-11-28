@@ -32,8 +32,6 @@ public class KeyBindManager {
     }
 
     public static boolean wasPressed(String keyBindId) {
-        // Для "wasPressed" нам нужно отслеживать состояние между кадрами
-        // Пока сделаем простую проверку isPressed
         return isPressed(keyBindId);
     }
 
@@ -41,7 +39,6 @@ public class KeyBindManager {
         return net.minecraft.client.MinecraftClient.getInstance().getWindow().getHandle();
     }
 
-    // Система записи новых комбинаций
     // Система записи новых комбинаций
     public static void startRecording(String keyBindId, KeyBindRecorderCallback callback) {
         currentRecorder = new KeyBindRecorder(keyBindId, callback);
@@ -73,8 +70,8 @@ public class KeyBindManager {
     public static class KeyBindRecorder {
         private final String keyBindId;
         private final KeyBindRecorderCallback callback;
-        private String key1 = null; // Первая кнопка
-        private String key2 = null; // Вторая кнопка
+        private String key1 = null;
+        private String key2 = null;
 
         public KeyBindRecorder(String keyBindId, KeyBindRecorderCallback callback) {
             this.keyBindId = keyBindId;
@@ -85,7 +82,6 @@ public class KeyBindManager {
             String keyName = KeyBindings.getKeyName(keyCode);
             if (keyName == null) return;
 
-            // SPACE - завершить запись
             if (keyCode == GLFW.GLFW_KEY_SPACE) {
                 if (key1 != null) {
                     // SPACE после первой кнопки - завершить с одной кнопкой
@@ -98,7 +94,6 @@ public class KeyBindManager {
             }
 
             if (key1 == null) {
-                // Первая кнопка
                 key1 = keyName;
                 callback.onKey1Recorded(keyName);
                 callback.onWaitingForKey2();
@@ -107,29 +102,24 @@ public class KeyBindManager {
                 key2 = keyName;
                 saveKeyCombination(key1, key2);
             }
-            // Игнорируем повторные нажатия той же кнопки
         }
 
         private void saveSingleKey(String key) {
-            // Одна кнопка: key становится основной, модификатора нет
             Configs.KeyBindConfig newConfig = new Configs.KeyBindConfig(key, null);
             saveConfig(newConfig);
         }
 
         private void saveKeyCombination(String key1, String key2) {
-            // Две кнопки: key1 становится модификатором, key2 становится основной
             Configs.KeyBindConfig newConfig = new Configs.KeyBindConfig(key2, key1);
             saveConfig(newConfig);
         }
 
         private void saveConfig(Configs.KeyBindConfig newConfig) {
-            // Проверяем конфликты
             if (hasKeyBindConflict(keyBindId, newConfig)) {
                 callback.onRecordingFailed("Эта комбинация уже используется для другой функции");
                 return;
             }
 
-            // Сохраняем новую комбинацию
             updateKeyBindConfig(keyBindId, newConfig);
             Configs.saveConfig();
 

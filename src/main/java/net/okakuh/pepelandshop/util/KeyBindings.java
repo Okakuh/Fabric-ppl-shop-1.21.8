@@ -167,19 +167,4 @@ public class KeyBindings {
         }
         return keyName; // Возвращаем исходное имя, если не найдено
     }
-
-    // Метод для получения отображаемого имени по коду
-    public static String getDisplayName(int keyCode) {
-        String keyName = getKeyName(keyCode);
-        return keyName != null ? getDisplayName(keyName) : "Unknown";
-    }
-
-    // Метод для получения списка всех имен клавиш
-    public static List<String> getAllKeyNames() {
-        List<String> names = new ArrayList<>();
-        for (String[] key : ALL_KEYS) {
-            names.add(key[0]);
-        }
-        return names;
-    }
 }

@@ -22,17 +22,7 @@ public class ConfigCommands {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
 
             dispatcher.register(literal("shop_config")
-                    .executes(context -> {
-                        showConfigHelp(context);
-                        return 1;
-                    })
-
-                    // === Радиус поиска ===
                     .then(literal("radius")
-                            .executes(context -> {
-                                showCurrentRadius(context);
-                                return 1;
-                            })
                             .then(argument("value", IntegerArgumentType.integer(1, 1000))
                                     .executes(context -> {
                                         int radius = IntegerArgumentType.getInteger(context, "value");
@@ -40,13 +30,7 @@ public class ConfigCommands {
                                     })
                             )
                     )
-
-                    // === Размер стака ===
                     .then(literal("stack")
-                            .executes(context -> {
-                                showCurrentStackSize(context);
-                                return 1;
-                            })
                             .then(argument("value", IntegerArgumentType.integer(1, 64))
                                     .executes(context -> {
                                         int stack = IntegerArgumentType.getInteger(context, "value");
@@ -54,13 +38,7 @@ public class ConfigCommands {
                                     })
                             )
                     )
-
-                    // === Y координаты ===
                     .then(literal("y_coords")
-                            .executes(context -> {
-                                showCurrentYCoords(context);
-                                return 1;
-                            })
                             .then(literal("min")
                                     .then(argument("value", IntegerArgumentType.integer(-64, 319))
                                             .executes(context -> {
@@ -77,30 +55,9 @@ public class ConfigCommands {
                                             })
                                     )
                             )
-                            .then(literal("set")
-                                    .then(argument("min", IntegerArgumentType.integer(-64, 319))
-                                            .then(argument("max", IntegerArgumentType.integer(-64, 319))
-                                                    .executes(context -> {
-                                                        int minY = IntegerArgumentType.getInteger(context, "min");
-                                                        int maxY = IntegerArgumentType.getInteger(context, "max");
-                                                        return setYCoords(minY, maxY, context);
-                                                    })
-                                            )
-                                    )
-                            )
                     )
-
-                    // === Цвета выделения ===
                     .then(literal("highlighting")
-                            .executes(context -> {
-                                showCurrentHighlightColors(context);
-                                return 1;
-                            })
                             .then(literal("color1")
-                                    .executes(context -> {
-                                        showCurrentColor1(context);
-                                        return 1;
-                                    })
                                     .then(argument("color", StringArgumentType.string())
                                             .suggests((context, builder) -> {
                                                 for (DyeColor dyeColor : DyeColor.values()) {
@@ -115,10 +72,6 @@ public class ConfigCommands {
                                     )
                             )
                             .then(literal("color2")
-                                    .executes(context -> {
-                                        showCurrentColor2(context);
-                                        return 1;
-                                    })
                                     .then(argument("color", StringArgumentType.string())
                                             .suggests((context, builder) -> {
                                                 for (DyeColor dyeColor : DyeColor.values()) {
@@ -133,18 +86,8 @@ public class ConfigCommands {
                                     )
                             )
                     )
-
-                    // === Паттерны ===
                     .then(literal("patterns")
-                            .executes(context -> {
-                                showCurrentPatterns(context);
-                                return 1;
-                            })
                             .then(literal("price")
-                                    .executes(context -> {
-                                        showCurrentPricePattern(context);
-                                        return 1;
-                                    })
                                     .then(argument("pattern", StringArgumentType.greedyString())
                                             .executes(context -> {
                                                 String pattern = StringArgumentType.getString(context, "pattern");
@@ -153,10 +96,6 @@ public class ConfigCommands {
                                     )
                             )
                             .then(literal("amount")
-                                    .executes(context -> {
-                                        showCurrentAmountPattern(context);
-                                        return 1;
-                                    })
                                     .then(argument("pattern", StringArgumentType.greedyString())
                                             .executes(context -> {
                                                 String pattern = StringArgumentType.getString(context, "pattern");
@@ -165,13 +104,13 @@ public class ConfigCommands {
                                     )
                             )
                     )
-
-                    // === НАСТРОЙКА КЛАВИШ === (НОВАЯ СЕКЦИЯ)
                     .then(literal("keybinds")
-                            .executes(context -> {
-                                showKeyBindsHelp(context);
-                                return 1;
-                            })
+                            .then(literal("help")
+                                    .executes(context -> {
+                                        showKeyBindsHelp(context);
+                                        return 1;
+                                    })
+                            )
                             .then(literal("show")
                                     .executes(context -> {
                                         return showCurrentKeyBinds(context);
@@ -207,10 +146,6 @@ public class ConfigCommands {
                     )
                     .then(literal("quick_shop")
                             .then(literal("message")
-                                    .executes(context -> {
-                                        showCurrentQuickShopMessage(context);
-                                        return 1;
-                                    })
                                     .then(argument("message", StringArgumentType.greedyString())
                                             .executes(context -> {
                                                 String message = StringArgumentType.getString(context, "message");
@@ -219,10 +154,6 @@ public class ConfigCommands {
                                     )
                             )
                             .then(literal("enabled")
-                                    .executes(context -> {
-                                        showCurrentQuickShopEnabled(context);
-                                        return 1;
-                                    })
                                     .then(argument("state", BoolArgumentType.bool())
                                             .executes(context -> {
                                                 boolean enabled = BoolArgumentType.getBool(context, "state");
@@ -231,14 +162,11 @@ public class ConfigCommands {
                                     )
                             )
                     )
-                    // === Сброс настроек ===
                     .then(literal("reset")
                             .executes(context -> {
                                 return resetConfig(context);
                             })
                     )
-
-                    // === Показать все настройки ===
                     .then(literal("show")
                             .executes(context -> {
                                 return showAllSettings(context);
@@ -248,21 +176,10 @@ public class ConfigCommands {
         });
     }
 
-    private static void showCurrentQuickShopMessage(CommandContext<FabricClientCommandSource> context) {
-        String currentMessage = ConfigManager.getQuickShopMessage();
-        context.getSource().sendFeedback(Text.literal("§aТекущее сообщение быстрого магазина: §e" + currentMessage));
-    }
-
     private static int setQuickShopMessage(String message, CommandContext<FabricClientCommandSource> context) {
         ConfigManager.setQuickShopMessage(message);
-        context.getSource().sendFeedback(Text.literal("§aСообщение быстрого магазина установлено на: §e" + message));
+        context.getSource().sendFeedback(Text.literal("§aБыстрый магазин сообщение теперь: §e" + message));
         return 1;
-    }
-
-    private static void showCurrentQuickShopEnabled(CommandContext<FabricClientCommandSource> context) {
-        boolean enabled = ConfigManager.isQuickShopEnabled();
-        String status = enabled ? "§aВключен" : "§cВыключен";
-        context.getSource().sendFeedback(Text.literal("§aБыстрый магазин: " + status));
     }
 
     private static int setQuickShopEnabled(boolean enabled, CommandContext<FabricClientCommandSource> context) {
@@ -270,35 +187,6 @@ public class ConfigCommands {
         String status = enabled ? "§aвключен" : "§cвыключен";
         context.getSource().sendFeedback(Text.literal("§aБыстрый магазин " + status));
         return 1;
-    }
-
-    private static void showConfigHelp(CommandContext<FabricClientCommandSource> context) {
-        var source = context.getSource();
-        source.sendFeedback(Text.literal("§6=== PepelandShop Configuration ==="));
-        source.sendFeedback(Text.literal("§e/shop_config show §7- показать все текущие настройки"));
-        source.sendFeedback(Text.literal("§e/shop_config radius [значение] §7- радиус поиска (1-1000)"));
-        source.sendFeedback(Text.literal("§e/shop_config stack [значение] §7- размер стака (1-64)"));
-        source.sendFeedback(Text.literal("§e/shop_config y_coords §7- работа с Y координатами"));
-        source.sendFeedback(Text.literal("§e/shop_config highlighting §7- настройка цветов выделения"));
-        source.sendFeedback(Text.literal("§e/shop_config patterns §7- настройка паттернов поиска"));
-        source.sendFeedback(Text.literal("§e/shop_config keybinds §7- настройка клавиш управления"));
-        source.sendFeedback(Text.literal("§aБыстрый магазин: " +
-                (ConfigManager.isQuickShopEnabled() ? "§aВключен" : "§cВыключен")));
-        source.sendFeedback(Text.literal("§aСообщение быстрого магазина: §e" + ConfigManager.getQuickShopMessage()));
-        source.sendFeedback(Text.literal("§e/shop_config reset §7- сбросить настройки по умолчанию"));
-
-
-        // Показываем доступные цвета
-        StringBuilder colorList = new StringBuilder("§6Доступные цвета: ");
-        DyeColor[] colors = DyeColor.values();
-        for (int i = 0; i < colors.length; i++) {
-            colorList.append(colors[i].name().toLowerCase());
-            if (i < colors.length - 1) {
-                colorList.append(", ");
-            }
-        }
-        source.sendFeedback(Text.literal(colorList.toString()));
-        source.sendFeedback(Text.literal("§6=================================="));
     }
 
     private static int showAllSettings(CommandContext<FabricClientCommandSource> context) {
@@ -384,7 +272,7 @@ public class ConfigCommands {
             @Override
             public void onKey1Recorded(String keyName) {
                 context.getSource().sendFeedback(Text.literal("§aКнопка 1: §e" + KeyBindings.getDisplayName(keyName)));
-                context.getSource().sendFeedback(Text.literal("§7Нажмите §eSPACE§7 для завершения, или кнопку 2 для комбинации"));
+                context.getSource().sendFeedback(Text.literal("§7Нажмите §eSPACE§7 для завершения, или вторую клавишу комбинации"));
             }
 
             @Override
@@ -396,7 +284,7 @@ public class ConfigCommands {
             @Override
             public void onRecordingCompleted(Configs.KeyBindConfig newConfig) {
                 String functionName = getFunctionName(keyBindId);
-                context.getSource().sendFeedback(Text.literal("§aНазначен новый ключ: §e" + newConfig + " §aдля функции: §e" + functionName));
+                context.getSource().sendFeedback(Text.literal("§aНазначен новый keybind: §e" + newConfig + " §aдля : §e" + functionName));
                 KeyBindManager.stopRecording();
             }
 
@@ -435,16 +323,11 @@ public class ConfigCommands {
 
         Configs.saveConfig();
 
-        context.getSource().sendFeedback(Text.literal("§aВсе клавиши сброшены к значениям по умолчанию!"));
+        context.getSource().sendFeedback(Text.literal("§aВсе keybind'ы сброшены к значениям по умолчанию!"));
         return 1;
     }
 
     // === Методы для радиуса ===
-
-    private static void showCurrentRadius(CommandContext<FabricClientCommandSource> context) {
-        context.getSource().sendFeedback(Text.literal("§aТекущий радиус поиска: §e" + ConfigManager.getSearchRadius()));
-    }
-
     private static int setRadius(int radius, CommandContext<FabricClientCommandSource> context) {
         int oldRadius = ConfigManager.getSearchRadius();
         ConfigManager.setSearchRadius(radius);
@@ -453,11 +336,6 @@ public class ConfigCommands {
     }
 
     // === Методы для размера стака ===
-
-    private static void showCurrentStackSize(CommandContext<FabricClientCommandSource> context) {
-        context.getSource().sendFeedback(Text.literal("§aТекущий размер стака: §e" + ConfigManager.getStackSize()));
-    }
-
     private static int setStackSize(int stack, CommandContext<FabricClientCommandSource> context) {
         int oldStack = ConfigManager.getStackSize();
         ConfigManager.setStackSize(stack);
@@ -466,11 +344,6 @@ public class ConfigCommands {
     }
 
     // === Методы для Y координат ===
-
-    private static void showCurrentYCoords(CommandContext<FabricClientCommandSource> context) {
-        context.getSource().sendFeedback(Text.literal("§aТекущие Y координаты: §e" + ConfigManager.getMinY() + " §7- §e" + ConfigManager.getMaxY()));
-    }
-
     private static int setMinY(int minY, CommandContext<FabricClientCommandSource> context) {
         int currentMaxY = ConfigManager.getMaxY();
         if (minY > currentMaxY) {
@@ -492,33 +365,7 @@ public class ConfigCommands {
         context.getSource().sendFeedback(Text.literal("§aМаксимальная Y координата установлена на: §e" + maxY));
         return 1;
     }
-
-    private static int setYCoords(int minY, int maxY, CommandContext<FabricClientCommandSource> context) {
-        if (minY > maxY) {
-            context.getSource().sendFeedback(Text.literal("§cОшибка: минимальная Y координата не может быть больше максимальной!"));
-            return 0;
-        }
-        ConfigManager.setYCoords(minY, maxY);
-        context.getSource().sendFeedback(Text.literal("§aY координаты установлены: §e" + minY + " §7- §e" + maxY));
-        return 1;
-    }
-
     // === Методы для цветов выделения ===
-
-    private static void showCurrentHighlightColors(CommandContext<FabricClientCommandSource> context) {
-        context.getSource().sendFeedback(Text.literal("§aТекущие цвета выделения:"));
-        context.getSource().sendFeedback(Text.literal("  §aЦвет 1: §e" + ConfigManager.getFirstHighlightColor().getName()));
-        context.getSource().sendFeedback(Text.literal("  §aЦвет 2: §e" + ConfigManager.getSecondHighlightColor().getName()));
-    }
-
-    private static void showCurrentColor1(CommandContext<FabricClientCommandSource> context) {
-        context.getSource().sendFeedback(Text.literal("§aТекущий первый цвет: §e" + ConfigManager.getFirstHighlightColor().getName()));
-    }
-
-    private static void showCurrentColor2(CommandContext<FabricClientCommandSource> context) {
-        context.getSource().sendFeedback(Text.literal("§aТекущий второй цвет: §e" + ConfigManager.getSecondHighlightColor().getName()));
-    }
-
     private static int setHighlightColor1(String color, CommandContext<FabricClientCommandSource> context) {
         try {
             DyeColor.valueOf(color.toUpperCase());
@@ -526,7 +373,7 @@ public class ConfigCommands {
             context.getSource().sendFeedback(Text.literal("§aПервый цвет выделения установлен на: §e" + color));
             return 1;
         } catch (IllegalArgumentException e) {
-            context.getSource().sendFeedback(Text.literal("§cОшибка: неверный цвет! Используйте цвета из списка."));
+            context.getSource().sendFeedback(Text.literal("§cОшибка: неверный цвет!"));
             return 0;
         }
     }
@@ -538,28 +385,13 @@ public class ConfigCommands {
             context.getSource().sendFeedback(Text.literal("§aВторой цвет выделения установлен на: §e" + color));
             return 1;
         } catch (IllegalArgumentException e) {
-            context.getSource().sendFeedback(Text.literal("§cОшибка: неверный цвет! Используйте цвета из списка."));
+            context.getSource().sendFeedback(Text.literal("§cОшибка: неверный цвет!"));
             return 0;
         }
     }
 
     // === Методы для паттернов ===
-
-    private static void showCurrentPatterns(CommandContext<FabricClientCommandSource> context) {
-        context.getSource().sendFeedback(Text.literal("§aТекущие паттерны:"));
-        context.getSource().sendFeedback(Text.literal("  §aЦены: §e" + ConfigManager.getPricePattern()));
-        context.getSource().sendFeedback(Text.literal("  §aКоличества: §e" + ConfigManager.getAmountPattern()));
-    }
-
-    private static void showCurrentPricePattern(CommandContext<FabricClientCommandSource> context) {
-        context.getSource().sendFeedback(Text.literal("§aТекущий паттерн для цен: §e" + ConfigManager.getPricePattern()));
-    }
-
-    private static void showCurrentAmountPattern(CommandContext<FabricClientCommandSource> context) {
-        context.getSource().sendFeedback(Text.literal("§aТекущий паттерн для количеств: §e" + ConfigManager.getAmountPattern()));
-    }
-
-    private static int setPricePattern(String pattern, CommandContext<FabricClientCommandSource> context) {
+     private static int setPricePattern(String pattern, CommandContext<FabricClientCommandSource> context) {
         ConfigManager.setPricePattern(pattern);
         context.getSource().sendFeedback(Text.literal("§aПаттерн для цен установлен на: §e" + pattern));
         return 1;
@@ -572,7 +404,6 @@ public class ConfigCommands {
     }
 
     // === Сброс настроек ===
-
     private static int resetConfig(CommandContext<FabricClientCommandSource> context) {
         // Создаем новый конфиг по умолчанию
         Configs.Config defaultConfig = new Configs.Config();

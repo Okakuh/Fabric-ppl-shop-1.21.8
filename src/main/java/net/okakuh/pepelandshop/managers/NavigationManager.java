@@ -51,12 +51,10 @@ public class NavigationManager {
     }
 
     public static void handleQuickShop(MinecraftClient client) {
-        // ПРОВЕРЯЕМ ВКЛЮЧЕН ЛИ БЫСТРЫЙ МАГАЗИН
         if (!ConfigManager.isQuickShopEnabled()) {
             return;
         }
 
-        // Используем KeyBindManager для быстрого магазина
         if (KeyBindManager.wasPressed("quick_shop") && !wasQuickShopPressed) {
             wasQuickShopPressed = true;
             openChatWithText(ConfigManager.getQuickShopMessage());
@@ -91,7 +89,6 @@ public class NavigationManager {
         Double currentPrice = currentPriceKeys.get(currentGroupIndex);
         List<BlockPos> currentGroup = currentSortedSigns.get(currentPrice);
 
-        // Получаем цвета напрямую из ConfigManager как DyeColor
         var firstColor = ConfigManager.getFirstHighlightDyeColor();
         var secondColor = ConfigManager.getSecondHighlightDyeColor();
 
