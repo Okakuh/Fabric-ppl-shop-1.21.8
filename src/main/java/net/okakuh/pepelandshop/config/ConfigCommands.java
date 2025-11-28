@@ -1,5 +1,6 @@
 package net.okakuh.pepelandshop.config;
 
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
@@ -203,7 +204,32 @@ public class ConfigCommands {
                                     })
                             )
                     )
-
+                    .then(literal("quick_shop")
+                            .then(literal("message")
+                                    .executes(context -> {
+                                        showCurrentQuickShopMessage(context);
+                                        return 1;
+                                    })
+                                    .then(argument("message", StringArgumentType.greedyString())
+                                            .executes(context -> {
+                                                String message = StringArgumentType.getString(context, "message");
+                                                return setQuickShopMessage(message, context);
+                                            })
+                                    )
+                            )
+                            .then(literal("enabled")
+                                    .executes(context -> {
+                                        showCurrentQuickShopEnabled(context);
+                                        return 1;
+                                    })
+                                    .then(argument("state", BoolArgumentType.bool())
+                                            .executes(context -> {
+                                                boolean enabled = BoolArgumentType.getBool(context, "state");
+                                                return setQuickShopEnabled(enabled, context);
+                                            })
+                                    )
+                            )
+                    )
                     // === Сброс настроек ===
                     .then(literal("reset")
                             .executes(context -> {
@@ -223,6 +249,30 @@ public class ConfigCommands {
 
     // === Методы отображения текущих настроек ===
 
+    private static void showCurrentQuickShopMessage(CommandContext<FabricClientCommandSource> context) {
+        String currentMessage = ConfigHelper.getQuickShopMessage();
+        context.getSource().sendFeedback(Text.literal("§aТекущее сообщение быстрого магазина: §e" + currentMessage));
+    }
+
+    private static int setQuickShopMessage(String message, CommandContext<FabricClientCommandSource> context) {
+        ConfigHelper.setQuickShopMessage(message);
+        context.getSource().sendFeedback(Text.literal("§aСообщение быстрого магазина установлено на: §e" + message));
+        return 1;
+    }
+
+    private static void showCurrentQuickShopEnabled(CommandContext<FabricClientCommandSource> context) {
+        boolean enabled = ConfigHelper.isQuickShopEnabled();
+        String status = enabled ? "§aВключен" : "§cВыключен";
+        context.getSource().sendFeedback(Text.literal("§aБыстрый магазин: " + status));
+    }
+
+    private static int setQuickShopEnabled(boolean enabled, CommandContext<FabricClientCommandSource> context) {
+        ConfigHelper.setQuickShopEnabled(enabled);
+        String status = enabled ? "§aвключен" : "§cвыключен";
+        context.getSource().sendFeedback(Text.literal("§aБыстрый магазин " + status));
+        return 1;
+    }
+
     private static void showConfigHelp(CommandContext<FabricClientCommandSource> context) {
         var source = context.getSource();
         source.sendFeedback(Text.literal("§6=== PepelandShop Configuration ==="));
@@ -232,8 +282,12 @@ public class ConfigCommands {
         source.sendFeedback(Text.literal("§e/shop_config y_coords §7- работа с Y координатами"));
         source.sendFeedback(Text.literal("§e/shop_config highlighting §7- настройка цветов выделения"));
         source.sendFeedback(Text.literal("§e/shop_config patterns §7- настройка паттернов поиска"));
-        source.sendFeedback(Text.literal("§e/shop_config keybinds §7- настройка клавиш управления")); // НОВАЯ СТРОКА
+        source.sendFeedback(Text.literal("§e/shop_config keybinds §7- настройка клавиш управления"));
+        source.sendFeedback(Text.literal("§aБыстрый магазин: " +
+                (ConfigHelper.isQuickShopEnabled() ? "§aВключен" : "§cВыключен")));
+        source.sendFeedback(Text.literal("§aСообщение быстрого магазина: §e" + ConfigHelper.getQuickShopMessage()));
         source.sendFeedback(Text.literal("§e/shop_config reset §7- сбросить настройки по умолчанию"));
+
 
         // Показываем доступные цвета
         StringBuilder colorList = new StringBuilder("§6Доступные цвета: ");
@@ -270,6 +324,11 @@ public class ConfigCommands {
 
         // Клавиши
         source.sendFeedback(Text.literal("§aНастройки клавиш: §eиспользуйте /shop_config keybinds show"));
+
+        // сообщение быстрого магазина
+        source.sendFeedback(Text.literal("§aБыстрый магазин: " +
+                (ConfigHelper.isQuickShopEnabled() ? "§aВключен" : "§cВыключен")));
+        source.sendFeedback(Text.literal("§aСообщение быстрого магазина: §e" + ConfigHelper.getQuickShopMessage()));
 
         source.sendFeedback(Text.literal("§6========================================="));
         return 1;
@@ -459,12 +518,6 @@ public class ConfigCommands {
 
     private static void showCurrentColor2(CommandContext<FabricClientCommandSource> context) {
         context.getSource().sendFeedback(Text.literal("§aТекущий второй цвет: §e" + ConfigHelper.getSecondHighlightColor().getName()));
-    }
-
-    // Вспомогательный метод для красивого отображения имен цветов
-    private static String getColorDisplayName(DyeColor dyeColor) {
-        if (dyeColor == null) return "green";
-        return dyeColor.name().toLowerCase();
     }
 
     private static int setHighlightColor1(String color, CommandContext<FabricClientCommandSource> context) {

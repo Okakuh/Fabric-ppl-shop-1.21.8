@@ -122,11 +122,10 @@ public class ConfigHelper {
 
     private static String validateColorName(String colorName) {
         try {
-            // Проверяем, что цвет существует в DyeColor
             DyeColor.valueOf(colorName.toUpperCase());
             return colorName.toLowerCase();
         } catch (IllegalArgumentException e) {
-            return "green"; // значение по умолчанию
+            return "green";
         }
     }
 
@@ -216,5 +215,25 @@ public class ConfigHelper {
         }
 
         ConfigManager.setConfig(CONFIG);
+    }
+
+    // === Сообщение быстрого магазина ===
+    public static String getQuickShopMessage() {
+        return CONFIG.quick_shop_message != null ? CONFIG.quick_shop_message : "/shop 64 ";
+    }
+
+    public static void setQuickShopMessage(String message) {
+        CONFIG.quick_shop_message = message != null ? message : "/shop 64 ";
+        ConfigManager.saveConfig();
+    }
+
+    // ДОБАВЛЯЕМ НОВЫЕ МЕТОДЫ:
+    public static boolean isQuickShopEnabled() {
+        return CONFIG.quick_shop_enabled;
+    }
+
+    public static void setQuickShopEnabled(boolean enabled) {
+        CONFIG.quick_shop_enabled = enabled;
+        ConfigManager.saveConfig();
     }
 }

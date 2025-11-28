@@ -12,7 +12,6 @@ import org.lwjgl.glfw.GLFW;
 import static net.okakuh.pepelandshop.config.ConfigManager.*;
 
 public class PepelandShopClient implements ClientModInitializer {
-
     @Override
     public void onInitializeClient() {
         loadConfig();

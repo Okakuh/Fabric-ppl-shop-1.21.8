@@ -19,16 +19,21 @@ public class ConfigManager {
     public static class Config {
         public int default_radius = 40;
         public int default_stack = 64;
+
         public String price_pattern = "\\d+\\s*а[а-яё]{1}";
         public String amount_pattern = "\\d+\\s*[а-яё]{2}";
+
         public List<Integer> y_coords = Arrays.asList(0, 3);
+
         public List<String> highlight_colors = Arrays.asList("white", "black");
 
-        // Новые настройки клавиш
+        public String quick_shop_message = "/shop 64 ";
+        public boolean quick_shop_enabled = false;
+
         public KeyBindConfig group_next = new KeyBindConfig("up", null);
         public KeyBindConfig group_previous = new KeyBindConfig("down", null);
         public KeyBindConfig end_navigation = new KeyBindConfig("backspace", null);
-        public KeyBindConfig quick_shop = new KeyBindConfig("r", null);
+        public KeyBindConfig quick_shop = new KeyBindConfig("s", "left_alt");
     }
 
     public static class KeyBindConfig {

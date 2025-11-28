@@ -53,10 +53,15 @@ public class NavigationManager {
     }
 
     public static void handleQuickShop(MinecraftClient client) {
+        // ПРОВЕРЯЕМ ВКЛЮЧЕН ЛИ БЫСТРЫЙ МАГАЗИН
+        if (!ConfigHelper.isQuickShopEnabled()) {
+            return;
+        }
+
         // Используем KeyBindManager для быстрого магазина
         if (KeyBindManager.wasPressed("quick_shop") && !wasQuickShopPressed) {
             wasQuickShopPressed = true;
-            openChatWithText("/shop 64 ");
+            openChatWithText(ConfigHelper.getQuickShopMessage());
         } else if (!KeyBindManager.wasPressed("quick_shop")) {
             wasQuickShopPressed = false;
         }
