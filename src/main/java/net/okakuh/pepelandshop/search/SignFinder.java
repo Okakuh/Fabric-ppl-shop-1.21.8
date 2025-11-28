@@ -6,8 +6,7 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.okakuh.pepelandshop.config.ConfigHelper;
-import net.okakuh.pepelandshop.config.ConfigManager;
+import net.okakuh.pepelandshop.managers.ConfigManager;
 
 import java.util.*;
 import java.util.regex.Pattern;
@@ -148,19 +147,19 @@ public class SignFinder {
     }
 
     private static int getMinYSearch() {
-        return ConfigHelper.getMinY();
+        return ConfigManager.getMinY();
     }
 
     private static int getMaxYSearch() {
-        return ConfigHelper.getMaxY();
+        return ConfigManager.getMaxY();
     }
 
     private static String getPricePattern() {
-        return ConfigHelper.getPricePattern();
+        return ConfigManager.getPricePattern();
     }
 
     private static String getAmountPattern() {
-        return ConfigHelper.getAmountPattern();
+        return ConfigManager.getAmountPattern();
     }
 
     private static class SignPriceInfo {

@@ -1,4 +1,4 @@
-package net.okakuh.pepelandshop.config;
+package net.okakuh.pepelandshop.commands;
 
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -8,9 +8,10 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallba
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.util.DyeColor;
+import net.okakuh.pepelandshop.managers.ConfigManager;
+import net.okakuh.pepelandshop.Configs;
+import net.okakuh.pepelandshop.managers.KeyBindManager;
 import net.okakuh.pepelandshop.util.KeyBindings;
-
-import java.util.Arrays;
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
@@ -247,27 +248,25 @@ public class ConfigCommands {
         });
     }
 
-    // === Методы отображения текущих настроек ===
-
     private static void showCurrentQuickShopMessage(CommandContext<FabricClientCommandSource> context) {
-        String currentMessage = ConfigHelper.getQuickShopMessage();
+        String currentMessage = ConfigManager.getQuickShopMessage();
         context.getSource().sendFeedback(Text.literal("§aТекущее сообщение быстрого магазина: §e" + currentMessage));
     }
 
     private static int setQuickShopMessage(String message, CommandContext<FabricClientCommandSource> context) {
-        ConfigHelper.setQuickShopMessage(message);
+        ConfigManager.setQuickShopMessage(message);
         context.getSource().sendFeedback(Text.literal("§aСообщение быстрого магазина установлено на: §e" + message));
         return 1;
     }
 
     private static void showCurrentQuickShopEnabled(CommandContext<FabricClientCommandSource> context) {
-        boolean enabled = ConfigHelper.isQuickShopEnabled();
+        boolean enabled = ConfigManager.isQuickShopEnabled();
         String status = enabled ? "§aВключен" : "§cВыключен";
         context.getSource().sendFeedback(Text.literal("§aБыстрый магазин: " + status));
     }
 
     private static int setQuickShopEnabled(boolean enabled, CommandContext<FabricClientCommandSource> context) {
-        ConfigHelper.setQuickShopEnabled(enabled);
+        ConfigManager.setQuickShopEnabled(enabled);
         String status = enabled ? "§aвключен" : "§cвыключен";
         context.getSource().sendFeedback(Text.literal("§aБыстрый магазин " + status));
         return 1;
@@ -284,8 +283,8 @@ public class ConfigCommands {
         source.sendFeedback(Text.literal("§e/shop_config patterns §7- настройка паттернов поиска"));
         source.sendFeedback(Text.literal("§e/shop_config keybinds §7- настройка клавиш управления"));
         source.sendFeedback(Text.literal("§aБыстрый магазин: " +
-                (ConfigHelper.isQuickShopEnabled() ? "§aВключен" : "§cВыключен")));
-        source.sendFeedback(Text.literal("§aСообщение быстрого магазина: §e" + ConfigHelper.getQuickShopMessage()));
+                (ConfigManager.isQuickShopEnabled() ? "§aВключен" : "§cВыключен")));
+        source.sendFeedback(Text.literal("§aСообщение быстрого магазина: §e" + ConfigManager.getQuickShopMessage()));
         source.sendFeedback(Text.literal("§e/shop_config reset §7- сбросить настройки по умолчанию"));
 
 
@@ -307,28 +306,28 @@ public class ConfigCommands {
         source.sendFeedback(Text.literal("§6=== Текущие настройки PepelandShop ==="));
 
         // Радиус и стак
-        source.sendFeedback(Text.literal("§aРадиус поиска: §e" + ConfigHelper.getSearchRadius()));
-        source.sendFeedback(Text.literal("§aРазмер стака: §e" + ConfigHelper.getStackSize()));
+        source.sendFeedback(Text.literal("§aРадиус поиска: §e" + ConfigManager.getSearchRadius()));
+        source.sendFeedback(Text.literal("§aРазмер стака: §e" + ConfigManager.getStackSize()));
 
         // Y координаты
-        source.sendFeedback(Text.literal("§aY координаты: §e" + ConfigHelper.getMinY() + " §7- §e" + ConfigHelper.getMaxY()));
+        source.sendFeedback(Text.literal("§aY координаты: §e" + ConfigManager.getMinY() + " §7- §e" + ConfigManager.getMaxY()));
 
         // Цвета - теперь методы работают
         source.sendFeedback(Text.literal("§aЦвета выделения: §e" +
-                ConfigHelper.getFirstHighlightColor().getName() + " §7и §e" +
-                ConfigHelper.getSecondHighlightColor().getName()));
+                ConfigManager.getFirstHighlightColor().getName() + " §7и §e" +
+                ConfigManager.getSecondHighlightColor().getName()));
 
         // Паттерны
-        source.sendFeedback(Text.literal("§aПаттерн цен: §e" + ConfigHelper.getPricePattern()));
-        source.sendFeedback(Text.literal("§aПаттерн количеств: §e" + ConfigHelper.getAmountPattern()));
+        source.sendFeedback(Text.literal("§aПаттерн цен: §e" + ConfigManager.getPricePattern()));
+        source.sendFeedback(Text.literal("§aПаттерн количеств: §e" + ConfigManager.getAmountPattern()));
 
         // Клавиши
         source.sendFeedback(Text.literal("§aНастройки клавиш: §eиспользуйте /shop_config keybinds show"));
 
         // сообщение быстрого магазина
         source.sendFeedback(Text.literal("§aБыстрый магазин: " +
-                (ConfigHelper.isQuickShopEnabled() ? "§aВключен" : "§cВыключен")));
-        source.sendFeedback(Text.literal("§aСообщение быстрого магазина: §e" + ConfigHelper.getQuickShopMessage()));
+                (ConfigManager.isQuickShopEnabled() ? "§aВключен" : "§cВыключен")));
+        source.sendFeedback(Text.literal("§aСообщение быстрого магазина: §e" + ConfigManager.getQuickShopMessage()));
 
         source.sendFeedback(Text.literal("§6========================================="));
         return 1;
@@ -361,7 +360,7 @@ public class ConfigCommands {
         var source = context.getSource();
         source.sendFeedback(Text.literal("§6=== Текущие настройки клавиш ==="));
 
-        var config = ConfigManager.getConfig();
+        var config = Configs.getConfig();
         source.sendFeedback(Text.literal("§aСледующая группа: §e" + config.group_next));
         source.sendFeedback(Text.literal("§aПредыдущая группа: §e" + config.group_previous));
         source.sendFeedback(Text.literal("§aЗавершить навигацию: §e" + config.end_navigation));
@@ -395,7 +394,7 @@ public class ConfigCommands {
             }
 
             @Override
-            public void onRecordingCompleted(ConfigManager.KeyBindConfig newConfig) {
+            public void onRecordingCompleted(Configs.KeyBindConfig newConfig) {
                 String functionName = getFunctionName(keyBindId);
                 context.getSource().sendFeedback(Text.literal("§aНазначен новый ключ: §e" + newConfig + " §aдля функции: §e" + functionName));
                 KeyBindManager.stopRecording();
@@ -428,13 +427,13 @@ public class ConfigCommands {
     }
 
     private static int resetKeyBinds(CommandContext<FabricClientCommandSource> context) {
-        var config = ConfigManager.getConfig();
-        config.group_next = new ConfigManager.KeyBindConfig("up", null);
-        config.group_previous = new ConfigManager.KeyBindConfig("down", null);
-        config.end_navigation = new ConfigManager.KeyBindConfig("backspace", null);
-        config.quick_shop = new ConfigManager.KeyBindConfig("r", null);
+        var config = Configs.getConfig();
+        config.group_next = new Configs.KeyBindConfig("up", null);
+        config.group_previous = new Configs.KeyBindConfig("down", null);
+        config.end_navigation = new Configs.KeyBindConfig("backspace", null);
+        config.quick_shop = new Configs.KeyBindConfig("r", null);
 
-        ConfigManager.saveConfig();
+        Configs.saveConfig();
 
         context.getSource().sendFeedback(Text.literal("§aВсе клавиши сброшены к значениям по умолчанию!"));
         return 1;
@@ -443,12 +442,12 @@ public class ConfigCommands {
     // === Методы для радиуса ===
 
     private static void showCurrentRadius(CommandContext<FabricClientCommandSource> context) {
-        context.getSource().sendFeedback(Text.literal("§aТекущий радиус поиска: §e" + ConfigHelper.getSearchRadius()));
+        context.getSource().sendFeedback(Text.literal("§aТекущий радиус поиска: §e" + ConfigManager.getSearchRadius()));
     }
 
     private static int setRadius(int radius, CommandContext<FabricClientCommandSource> context) {
-        int oldRadius = ConfigHelper.getSearchRadius();
-        ConfigHelper.setSearchRadius(radius);
+        int oldRadius = ConfigManager.getSearchRadius();
+        ConfigManager.setSearchRadius(radius);
         context.getSource().sendFeedback(Text.literal("§aРадиус поиска изменен: §e" + oldRadius + " §7→ §e" + radius));
         return 1;
     }
@@ -456,12 +455,12 @@ public class ConfigCommands {
     // === Методы для размера стака ===
 
     private static void showCurrentStackSize(CommandContext<FabricClientCommandSource> context) {
-        context.getSource().sendFeedback(Text.literal("§aТекущий размер стака: §e" + ConfigHelper.getStackSize()));
+        context.getSource().sendFeedback(Text.literal("§aТекущий размер стака: §e" + ConfigManager.getStackSize()));
     }
 
     private static int setStackSize(int stack, CommandContext<FabricClientCommandSource> context) {
-        int oldStack = ConfigHelper.getStackSize();
-        ConfigHelper.setStackSize(stack);
+        int oldStack = ConfigManager.getStackSize();
+        ConfigManager.setStackSize(stack);
         context.getSource().sendFeedback(Text.literal("§aРазмер стака изменен: §e" + oldStack + " §7→ §e" + stack));
         return 1;
     }
@@ -469,27 +468,27 @@ public class ConfigCommands {
     // === Методы для Y координат ===
 
     private static void showCurrentYCoords(CommandContext<FabricClientCommandSource> context) {
-        context.getSource().sendFeedback(Text.literal("§aТекущие Y координаты: §e" + ConfigHelper.getMinY() + " §7- §e" + ConfigHelper.getMaxY()));
+        context.getSource().sendFeedback(Text.literal("§aТекущие Y координаты: §e" + ConfigManager.getMinY() + " §7- §e" + ConfigManager.getMaxY()));
     }
 
     private static int setMinY(int minY, CommandContext<FabricClientCommandSource> context) {
-        int currentMaxY = ConfigHelper.getMaxY();
+        int currentMaxY = ConfigManager.getMaxY();
         if (minY > currentMaxY) {
             context.getSource().sendFeedback(Text.literal("§cОшибка: минимальная Y координата не может быть больше максимальной!"));
             return 0;
         }
-        ConfigHelper.setYCoords(minY, currentMaxY);
+        ConfigManager.setYCoords(minY, currentMaxY);
         context.getSource().sendFeedback(Text.literal("§aМинимальная Y координата установлена на: §e" + minY));
         return 1;
     }
 
     private static int setMaxY(int maxY, CommandContext<FabricClientCommandSource> context) {
-        int currentMinY = ConfigHelper.getMinY();
+        int currentMinY = ConfigManager.getMinY();
         if (maxY < currentMinY) {
             context.getSource().sendFeedback(Text.literal("§cОшибка: максимальная Y координата не может быть меньше минимальной!"));
             return 0;
         }
-        ConfigHelper.setYCoords(currentMinY, maxY);
+        ConfigManager.setYCoords(currentMinY, maxY);
         context.getSource().sendFeedback(Text.literal("§aМаксимальная Y координата установлена на: §e" + maxY));
         return 1;
     }
@@ -499,7 +498,7 @@ public class ConfigCommands {
             context.getSource().sendFeedback(Text.literal("§cОшибка: минимальная Y координата не может быть больше максимальной!"));
             return 0;
         }
-        ConfigHelper.setYCoords(minY, maxY);
+        ConfigManager.setYCoords(minY, maxY);
         context.getSource().sendFeedback(Text.literal("§aY координаты установлены: §e" + minY + " §7- §e" + maxY));
         return 1;
     }
@@ -508,22 +507,22 @@ public class ConfigCommands {
 
     private static void showCurrentHighlightColors(CommandContext<FabricClientCommandSource> context) {
         context.getSource().sendFeedback(Text.literal("§aТекущие цвета выделения:"));
-        context.getSource().sendFeedback(Text.literal("  §aЦвет 1: §e" + ConfigHelper.getFirstHighlightColor().getName()));
-        context.getSource().sendFeedback(Text.literal("  §aЦвет 2: §e" + ConfigHelper.getSecondHighlightColor().getName()));
+        context.getSource().sendFeedback(Text.literal("  §aЦвет 1: §e" + ConfigManager.getFirstHighlightColor().getName()));
+        context.getSource().sendFeedback(Text.literal("  §aЦвет 2: §e" + ConfigManager.getSecondHighlightColor().getName()));
     }
 
     private static void showCurrentColor1(CommandContext<FabricClientCommandSource> context) {
-        context.getSource().sendFeedback(Text.literal("§aТекущий первый цвет: §e" + ConfigHelper.getFirstHighlightColor().getName()));
+        context.getSource().sendFeedback(Text.literal("§aТекущий первый цвет: §e" + ConfigManager.getFirstHighlightColor().getName()));
     }
 
     private static void showCurrentColor2(CommandContext<FabricClientCommandSource> context) {
-        context.getSource().sendFeedback(Text.literal("§aТекущий второй цвет: §e" + ConfigHelper.getSecondHighlightColor().getName()));
+        context.getSource().sendFeedback(Text.literal("§aТекущий второй цвет: §e" + ConfigManager.getSecondHighlightColor().getName()));
     }
 
     private static int setHighlightColor1(String color, CommandContext<FabricClientCommandSource> context) {
         try {
             DyeColor.valueOf(color.toUpperCase());
-            ConfigHelper.setHighlightColor1(color);
+            ConfigManager.setHighlightColor1(color);
             context.getSource().sendFeedback(Text.literal("§aПервый цвет выделения установлен на: §e" + color));
             return 1;
         } catch (IllegalArgumentException e) {
@@ -535,7 +534,7 @@ public class ConfigCommands {
     private static int setHighlightColor2(String color, CommandContext<FabricClientCommandSource> context) {
         try {
             DyeColor.valueOf(color.toUpperCase());
-            ConfigHelper.setHighlightColor2(color);
+            ConfigManager.setHighlightColor2(color);
             context.getSource().sendFeedback(Text.literal("§aВторой цвет выделения установлен на: §e" + color));
             return 1;
         } catch (IllegalArgumentException e) {
@@ -548,26 +547,26 @@ public class ConfigCommands {
 
     private static void showCurrentPatterns(CommandContext<FabricClientCommandSource> context) {
         context.getSource().sendFeedback(Text.literal("§aТекущие паттерны:"));
-        context.getSource().sendFeedback(Text.literal("  §aЦены: §e" + ConfigHelper.getPricePattern()));
-        context.getSource().sendFeedback(Text.literal("  §aКоличества: §e" + ConfigHelper.getAmountPattern()));
+        context.getSource().sendFeedback(Text.literal("  §aЦены: §e" + ConfigManager.getPricePattern()));
+        context.getSource().sendFeedback(Text.literal("  §aКоличества: §e" + ConfigManager.getAmountPattern()));
     }
 
     private static void showCurrentPricePattern(CommandContext<FabricClientCommandSource> context) {
-        context.getSource().sendFeedback(Text.literal("§aТекущий паттерн для цен: §e" + ConfigHelper.getPricePattern()));
+        context.getSource().sendFeedback(Text.literal("§aТекущий паттерн для цен: §e" + ConfigManager.getPricePattern()));
     }
 
     private static void showCurrentAmountPattern(CommandContext<FabricClientCommandSource> context) {
-        context.getSource().sendFeedback(Text.literal("§aТекущий паттерн для количеств: §e" + ConfigHelper.getAmountPattern()));
+        context.getSource().sendFeedback(Text.literal("§aТекущий паттерн для количеств: §e" + ConfigManager.getAmountPattern()));
     }
 
     private static int setPricePattern(String pattern, CommandContext<FabricClientCommandSource> context) {
-        ConfigHelper.setPricePattern(pattern);
+        ConfigManager.setPricePattern(pattern);
         context.getSource().sendFeedback(Text.literal("§aПаттерн для цен установлен на: §e" + pattern));
         return 1;
     }
 
     private static int setAmountPattern(String pattern, CommandContext<FabricClientCommandSource> context) {
-        ConfigHelper.setAmountPattern(pattern);
+        ConfigManager.setAmountPattern(pattern);
         context.getSource().sendFeedback(Text.literal("§aПаттерн для количеств установлен на: §e" + pattern));
         return 1;
     }
@@ -576,9 +575,9 @@ public class ConfigCommands {
 
     private static int resetConfig(CommandContext<FabricClientCommandSource> context) {
         // Создаем новый конфиг по умолчанию
-        ConfigManager.Config defaultConfig = new ConfigManager.Config();
-        ConfigManager.setConfig(defaultConfig);
-        ConfigHelper.validateAndFixConfig();
+        Configs.Config defaultConfig = new Configs.Config();
+        Configs.setConfig(defaultConfig);
+        ConfigManager.validateAndFixConfig();
 
         context.getSource().sendFeedback(Text.literal("§aВсе настройки сброшены к значениям по умолчанию!"));
         return 1;

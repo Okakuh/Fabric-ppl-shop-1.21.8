@@ -1,37 +1,35 @@
-package net.okakuh.pepelandshop.config;
+package net.okakuh.pepelandshop.managers;
 
 import net.minecraft.util.Formatting;
 import net.minecraft.util.DyeColor;
+import net.okakuh.pepelandshop.Configs;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class ConfigHelper {
-    private static final ConfigManager.Config CONFIG = ConfigManager.getConfig();
-    private static final ConfigManager.Config DEFAULT_CONFIG = ConfigManager.getDefaultConfig();
+public class ConfigManager {
+    private static final Configs.Config CONFIG = Configs.getConfig();
+    private static final Configs.Config DEFAULT_CONFIG = Configs.getDefaultConfig();
 
-    // === Радиус поиска ===
     public static int getSearchRadius() {
         return CONFIG.default_radius;
     }
 
     public static void setSearchRadius(int radius) {
         CONFIG.default_radius = Math.max(1, radius);
-        ConfigManager.setConfig(CONFIG);
+        Configs.setConfig(CONFIG);
     }
 
-    // === Размер стака ===
     public static int getStackSize() {
         return CONFIG.default_stack;
     }
 
     public static void setStackSize(int stackSize) {
         CONFIG.default_stack = Math.max(1, Math.min(64, stackSize));
-        ConfigManager.setConfig(CONFIG);
+        Configs.setConfig(CONFIG);
     }
 
-    // === Y координаты ===
     public static int getMinY() {
         List<Integer> yCoords = CONFIG.y_coords;
         return yCoords.size() > 0 ? yCoords.get(0) : DEFAULT_CONFIG.y_coords.get(0);
@@ -47,17 +45,16 @@ public class ConfigHelper {
                 Math.max(-64, Math.min(319, minY)),
                 Math.max(-64, Math.min(319, maxY))
         );
-        ConfigManager.setConfig(CONFIG);
+        Configs.setConfig(CONFIG);
     }
 
-    // === Паттерны ===
     public static String getPricePattern() {
         return CONFIG.price_pattern;
     }
 
     public static void setPricePattern(String pattern) {
         CONFIG.price_pattern = pattern != null ? pattern : DEFAULT_CONFIG.price_pattern;
-        ConfigManager.setConfig(CONFIG);
+        Configs.setConfig(CONFIG);
     }
 
     public static String getAmountPattern() {
@@ -66,10 +63,8 @@ public class ConfigHelper {
 
     public static void setAmountPattern(String pattern) {
         CONFIG.amount_pattern = pattern != null ? pattern : DEFAULT_CONFIG.amount_pattern;
-        ConfigManager.setConfig(CONFIG);
+        Configs.setConfig(CONFIG);
     }
-
-    // === Цвета выделения ===
 
     public static Formatting getFirstHighlightFormatting() {
         List<String> colors = CONFIG.highlight_colors;
@@ -83,7 +78,6 @@ public class ConfigHelper {
         return convertColorNameToFormatting(secondColor);
     }
 
-    // ДОБАВЛЯЕМ НОВЫЕ МЕТОДЫ:
     public static Formatting getFirstHighlightColor() {
         return getFirstHighlightFormatting();
     }
@@ -107,7 +101,7 @@ public class ConfigHelper {
         }
         colors.set(0, validateColorName(colorName));
         CONFIG.highlight_colors = colors;
-        ConfigManager.setConfig(CONFIG);
+        Configs.setConfig(CONFIG);
     }
 
     public static void setHighlightColor2(String colorName) {
@@ -117,10 +111,8 @@ public class ConfigHelper {
         }
         colors.set(1, validateColorName(colorName));
         CONFIG.highlight_colors = colors;
-        ConfigManager.setConfig(CONFIG);
+        Configs.setConfig(CONFIG);
     }
-
-    // === Конвертеры цветов ===
 
     private static String validateColorName(String colorName) {
         try {
@@ -180,8 +172,6 @@ public class ConfigHelper {
         }
     }
 
-    // === Полная валидация конфига ===
-    // В методе validateAndFixConfig используем дефолтные значения
     public static void validateAndFixConfig() {
         // Радиус
         if (CONFIG.default_radius < 1) CONFIG.default_radius = DEFAULT_CONFIG.default_radius;
@@ -222,7 +212,7 @@ public class ConfigHelper {
             CONFIG.quick_shop_message = DEFAULT_CONFIG.quick_shop_message;
         }
 
-        ConfigManager.saveConfig();
+        Configs.saveConfig();
     }
 
     public static String getQuickShopMessage() {
@@ -231,16 +221,15 @@ public class ConfigHelper {
 
     public static void setQuickShopMessage(String message) {
         CONFIG.quick_shop_message = message != null ? message : DEFAULT_CONFIG.quick_shop_message;
-        ConfigManager.saveConfig();
+        Configs.saveConfig();
     }
 
-    // ДОБАВЛЯЕМ НОВЫЕ МЕТОДЫ:
     public static boolean isQuickShopEnabled() {
         return CONFIG.quick_shop_enabled;
     }
 
     public static void setQuickShopEnabled(boolean enabled) {
         CONFIG.quick_shop_enabled = enabled;
-        ConfigManager.saveConfig();
+        Configs.saveConfig();
     }
 }

@@ -1,8 +1,9 @@
-package net.okakuh.pepelandshop.config;
+package net.okakuh.pepelandshop;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.fabricmc.loader.api.FabricLoader;
+import net.okakuh.pepelandshop.managers.ConfigManager;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -10,7 +11,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 
-public class ConfigManager {
+public class Configs {
     private static final Path CONFIG_FILE = FabricLoader.getInstance().getConfigDir().resolve("pepelandshop.json");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
@@ -94,7 +95,7 @@ public class ConfigManager {
                 String json = Files.readString(CONFIG_FILE);
                 config = GSON.fromJson(json, Config.class);
                 // Валидируем конфиг после загрузки
-                ConfigHelper.validateAndFixConfig();
+                ConfigManager.validateAndFixConfig();
             } else {
                 saveConfig();
             }
@@ -102,7 +103,7 @@ public class ConfigManager {
             System.err.println("Failed to load PepelandShop config: " + e.getMessage());
             // Создаем валидный конфиг по умолчанию
             config = new Config();
-            ConfigHelper.validateAndFixConfig();
+            ConfigManager.validateAndFixConfig();
         }
     }
 

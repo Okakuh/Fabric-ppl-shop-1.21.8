@@ -1,10 +1,8 @@
-package net.okakuh.pepelandshop.navigation;
+package net.okakuh.pepelandshop.managers;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
-import net.okakuh.pepelandshop.config.ConfigHelper;
-import net.okakuh.pepelandshop.config.KeyBindManager;
 import net.okakuh.pepelandshop.render.BlockHighlighter;
 import net.okakuh.pepelandshop.search.SignParser;
 
@@ -54,14 +52,14 @@ public class NavigationManager {
 
     public static void handleQuickShop(MinecraftClient client) {
         // ПРОВЕРЯЕМ ВКЛЮЧЕН ЛИ БЫСТРЫЙ МАГАЗИН
-        if (!ConfigHelper.isQuickShopEnabled()) {
+        if (!ConfigManager.isQuickShopEnabled()) {
             return;
         }
 
         // Используем KeyBindManager для быстрого магазина
         if (KeyBindManager.wasPressed("quick_shop") && !wasQuickShopPressed) {
             wasQuickShopPressed = true;
-            openChatWithText(ConfigHelper.getQuickShopMessage());
+            openChatWithText(ConfigManager.getQuickShopMessage());
         } else if (!KeyBindManager.wasPressed("quick_shop")) {
             wasQuickShopPressed = false;
         }
@@ -93,9 +91,9 @@ public class NavigationManager {
         Double currentPrice = currentPriceKeys.get(currentGroupIndex);
         List<BlockPos> currentGroup = currentSortedSigns.get(currentPrice);
 
-        // Получаем цвета напрямую из ConfigHelper как DyeColor
-        var firstColor = ConfigHelper.getFirstHighlightDyeColor();
-        var secondColor = ConfigHelper.getSecondHighlightDyeColor();
+        // Получаем цвета напрямую из ConfigManager как DyeColor
+        var firstColor = ConfigManager.getFirstHighlightDyeColor();
+        var secondColor = ConfigManager.getSecondHighlightDyeColor();
 
         BlockHighlighter.highlightBlocks(currentGroup, firstColor, secondColor);
 

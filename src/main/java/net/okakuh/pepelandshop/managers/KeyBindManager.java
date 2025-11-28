@@ -1,5 +1,6 @@
-package net.okakuh.pepelandshop.config;
+package net.okakuh.pepelandshop.managers;
 
+import net.okakuh.pepelandshop.Configs;
 import net.okakuh.pepelandshop.util.KeyBindings;
 import org.lwjgl.glfw.GLFW;
 
@@ -13,7 +14,7 @@ public class KeyBindManager {
 
     // Простые методы проверки нажатий через GLFW
     public static boolean isPressed(String keyBindId) {
-        ConfigManager.KeyBindConfig config = getKeyBindConfig(keyBindId);
+        Configs.KeyBindConfig config = getKeyBindConfig(keyBindId);
         if (config == null) return false;
 
         // Проверяем основную клавишу
@@ -111,17 +112,17 @@ public class KeyBindManager {
 
         private void saveSingleKey(String key) {
             // Одна кнопка: key становится основной, модификатора нет
-            ConfigManager.KeyBindConfig newConfig = new ConfigManager.KeyBindConfig(key, null);
+            Configs.KeyBindConfig newConfig = new Configs.KeyBindConfig(key, null);
             saveConfig(newConfig);
         }
 
         private void saveKeyCombination(String key1, String key2) {
             // Две кнопки: key1 становится модификатором, key2 становится основной
-            ConfigManager.KeyBindConfig newConfig = new ConfigManager.KeyBindConfig(key2, key1);
+            Configs.KeyBindConfig newConfig = new Configs.KeyBindConfig(key2, key1);
             saveConfig(newConfig);
         }
 
-        private void saveConfig(ConfigManager.KeyBindConfig newConfig) {
+        private void saveConfig(Configs.KeyBindConfig newConfig) {
             // Проверяем конфликты
             if (hasKeyBindConflict(keyBindId, newConfig)) {
                 callback.onRecordingFailed("Эта комбинация уже используется для другой функции");
@@ -130,7 +131,7 @@ public class KeyBindManager {
 
             // Сохраняем новую комбинацию
             updateKeyBindConfig(keyBindId, newConfig);
-            ConfigManager.saveConfig();
+            Configs.saveConfig();
 
             callback.onRecordingCompleted(newConfig);
         }
@@ -139,15 +140,15 @@ public class KeyBindManager {
     public interface KeyBindRecorderCallback {
         void onKey1Recorded(String keyName);
         void onWaitingForKey2();
-        void onRecordingCompleted(ConfigManager.KeyBindConfig newConfig);
+        void onRecordingCompleted(Configs.KeyBindConfig newConfig);
         void onRecordingFailed(String error);
         void onRecordingCancelled();
     }
 
-    private static boolean hasKeyBindConflict(String currentId, ConfigManager.KeyBindConfig newConfig) {
-        Map<String, ConfigManager.KeyBindConfig> allConfigs = getAllKeyBindConfigs();
+    private static boolean hasKeyBindConflict(String currentId, Configs.KeyBindConfig newConfig) {
+        Map<String, Configs.KeyBindConfig> allConfigs = getAllKeyBindConfigs();
 
-        for (Map.Entry<String, ConfigManager.KeyBindConfig> entry : allConfigs.entrySet()) {
+        for (Map.Entry<String, Configs.KeyBindConfig> entry : allConfigs.entrySet()) {
             if (!entry.getKey().equals(currentId) && newConfig.equals(entry.getValue())) {
                 return true;
             }
@@ -155,38 +156,38 @@ public class KeyBindManager {
         return false;
     }
 
-    private static Map<String, ConfigManager.KeyBindConfig> getAllKeyBindConfigs() {
-        Map<String, ConfigManager.KeyBindConfig> configs = new HashMap<>();
-        configs.put("group_next", ConfigManager.getConfig().group_next);
-        configs.put("group_previous", ConfigManager.getConfig().group_previous);
-        configs.put("end_navigation", ConfigManager.getConfig().end_navigation);
-        configs.put("quick_shop", ConfigManager.getConfig().quick_shop);
+    private static Map<String, Configs.KeyBindConfig> getAllKeyBindConfigs() {
+        Map<String, Configs.KeyBindConfig> configs = new HashMap<>();
+        configs.put("group_next", Configs.getConfig().group_next);
+        configs.put("group_previous", Configs.getConfig().group_previous);
+        configs.put("end_navigation", Configs.getConfig().end_navigation);
+        configs.put("quick_shop", Configs.getConfig().quick_shop);
         return configs;
     }
 
-    private static void updateKeyBindConfig(String id, ConfigManager.KeyBindConfig newConfig) {
+    private static void updateKeyBindConfig(String id, Configs.KeyBindConfig newConfig) {
         switch (id) {
             case "group_next":
-                ConfigManager.getConfig().group_next = newConfig;
+                Configs.getConfig().group_next = newConfig;
                 break;
             case "group_previous":
-                ConfigManager.getConfig().group_previous = newConfig;
+                Configs.getConfig().group_previous = newConfig;
                 break;
             case "end_navigation":
-                ConfigManager.getConfig().end_navigation = newConfig;
+                Configs.getConfig().end_navigation = newConfig;
                 break;
             case "quick_shop":
-                ConfigManager.getConfig().quick_shop = newConfig;
+                Configs.getConfig().quick_shop = newConfig;
                 break;
         }
     }
 
-    private static ConfigManager.KeyBindConfig getKeyBindConfig(String id) {
+    private static Configs.KeyBindConfig getKeyBindConfig(String id) {
         switch (id) {
-            case "group_next": return ConfigManager.getConfig().group_next;
-            case "group_previous": return ConfigManager.getConfig().group_previous;
-            case "end_navigation": return ConfigManager.getConfig().end_navigation;
-            case "quick_shop": return ConfigManager.getConfig().quick_shop;
+            case "group_next": return Configs.getConfig().group_next;
+            case "group_previous": return Configs.getConfig().group_previous;
+            case "end_navigation": return Configs.getConfig().end_navigation;
+            case "quick_shop": return Configs.getConfig().quick_shop;
             default: return null;
         }
     }

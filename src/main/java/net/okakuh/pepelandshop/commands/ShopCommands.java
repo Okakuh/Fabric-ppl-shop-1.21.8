@@ -1,12 +1,13 @@
-package net.okakuh.pepelandshop.command;
+package net.okakuh.pepelandshop.commands;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.text.Text;
+import net.okakuh.pepelandshop.Configs;
 import net.okakuh.pepelandshop.search.SignFinder;
-import net.okakuh.pepelandshop.navigation.NavigationManager;
+import net.okakuh.pepelandshop.managers.NavigationManager;
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
@@ -23,7 +24,7 @@ public class ShopCommands {
                                     .executes(context -> {
                                         int stack = IntegerArgumentType.getInteger(context, "stack");
                                         String searchPattern = StringArgumentType.getString(context, "search_pattern");
-                                        int radius = net.okakuh.pepelandshop.config.ConfigManager.getConfig().default_radius;
+                                        int radius = Configs.getConfig().default_radius;
                                         return executeShop(context, searchPattern, stack, radius, false);
                                     })
                             )
@@ -51,7 +52,7 @@ public class ShopCommands {
                                     .executes(context -> {
                                         int stack = IntegerArgumentType.getInteger(context, "stack");
                                         String regexPattern = StringArgumentType.getString(context, "regex_pattern");
-                                        int radius = net.okakuh.pepelandshop.config.ConfigManager.getConfig().default_radius;
+                                        int radius = Configs.getConfig().default_radius;
                                         return executeShop(context, regexPattern, stack, radius, true);
                                     })
                             )
@@ -112,7 +113,7 @@ public class ShopCommands {
         source.sendFeedback(Text.literal("§6=== НАВИГАЦИЯ ==="));
 
         // Получаем текущие настройки клавиш из конфига
-        var config = net.okakuh.pepelandshop.config.ConfigManager.getConfig();
+        var config = Configs.getConfig();
 
         // Навигация - используем настройки из конфига
         source.sendFeedback(Text.literal("§e" + config.group_next + " §7- следующая группа"));
@@ -122,6 +123,6 @@ public class ShopCommands {
         source.sendFeedback(Text.literal("§e" + config.end_navigation + " §7- завершить навигацию"));
 
 
-        source.sendFeedback(Text.literal("§6=================="));
+        source.sendFeedback(Text.literal("§6================"));
     }
 }

@@ -3,13 +3,13 @@ package net.okakuh.pepelandshop;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
-import net.okakuh.pepelandshop.command.ShopCommands;
-import net.okakuh.pepelandshop.config.ConfigCommands;
-import net.okakuh.pepelandshop.config.KeyBindManager;
-import net.okakuh.pepelandshop.navigation.NavigationManager;
+import net.okakuh.pepelandshop.commands.ShopCommands;
+import net.okakuh.pepelandshop.commands.ConfigCommands;
+import net.okakuh.pepelandshop.managers.KeyBindManager;
+import net.okakuh.pepelandshop.managers.NavigationManager;
 import org.lwjgl.glfw.GLFW;
 
-import static net.okakuh.pepelandshop.config.ConfigManager.*;
+import static net.okakuh.pepelandshop.Configs.*;
 
 public class PepelandShopClient implements ClientModInitializer {
     @Override
