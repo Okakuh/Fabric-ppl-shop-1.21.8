@@ -14,7 +14,6 @@
       "net.okakuh.pepelandshop.PepelandShopClient"
     ]
   },
-  "mixins": [],
   "depends": {
     "fabricloader": ">=0.15.0",
     "minecraft": "1.21.8",

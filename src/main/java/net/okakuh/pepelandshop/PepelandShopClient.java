@@ -3,6 +3,7 @@ package net.okakuh.pepelandshop;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.minecraft.client.MinecraftClient;
 import net.okakuh.pepelandshop.commands.ShopCommands;
 import net.okakuh.pepelandshop.commands.ConfigCommands;
 import net.okakuh.pepelandshop.managers.KeyBindManager;
